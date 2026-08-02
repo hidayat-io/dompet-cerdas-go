@@ -1,0 +1,325 @@
+{
+  "source": "functions/src/services/transactionParsingService.ts",
+  "fn": "parseTransactionMessageHybrid",
+  "note": "output \"AI_FALLBACK\" berarti parser lokal menolak dan melempar ke LLM. Port Go harus menolak di titik yang sama, bukan memaksa hasil lokal. Field parseConfidence menentukan boleh-tidaknya auto-save.",
+  "cases": [
+    {
+      "input": "makan siang 25rb",
+      "output": {
+        "items": [
+          {
+            "amount": 25000,
+            "description": "makan siang",
+            "category_hint": "Food",
+            "sourceText": "makan siang 25rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "kopi 18rb, parkir 5rb",
+      "output": {
+        "items": [
+          {
+            "amount": 18000,
+            "description": "kopi",
+            "category_hint": "Food",
+            "sourceText": "kopi 18rb"
+          },
+          {
+            "amount": 5000,
+            "description": "parkir",
+            "category_hint": "Transportation",
+            "sourceText": "parkir 5rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "medium"
+      }
+    },
+    {
+      "input": "tambah 50000 makan siang",
+      "output": {
+        "items": [
+          {
+            "amount": 50000,
+            "description": "makan siang",
+            "category_hint": "Food",
+            "sourceText": "50000 makan siang"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "catat 150000 bensin",
+      "output": {
+        "items": [
+          {
+            "amount": 150000,
+            "description": "bensin",
+            "category_hint": "Transportation",
+            "sourceText": "150000 bensin"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "tambahin 20k gojek",
+      "output": {
+        "items": [
+          {
+            "amount": 20000,
+            "description": "gojek",
+            "category_hint": "Transportation",
+            "sourceText": "20k gojek"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "catatkan 75rb belanja",
+      "output": {
+        "items": [
+          {
+            "amount": 75000,
+            "description": "belanja",
+            "category_hint": "Shopping",
+            "sourceText": "75rb belanja"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "input 30rb pulsa",
+      "output": {
+        "items": [
+          {
+            "amount": 30000,
+            "description": "pulsa",
+            "sourceText": "30rb pulsa"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "masukin 12rb kopi",
+      "output": {
+        "items": [
+          {
+            "amount": 12000,
+            "description": "kopi",
+            "category_hint": "Food",
+            "sourceText": "12rb kopi"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "beli obat 45000",
+      "output": {
+        "items": [
+          {
+            "amount": 45000,
+            "description": "beli obat",
+            "sourceText": "beli obat 45000"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "gaji 5jt",
+      "output": {
+        "items": [
+          {
+            "amount": 5000000,
+            "description": "gaji",
+            "category_hint": "Income",
+            "sourceText": "gaji 5jt"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "bonus 1,5jt",
+      "output": {
+        "items": [
+          {
+            "amount": 1500000,
+            "description": "bonus",
+            "category_hint": "Income",
+            "sourceText": "bonus 1,5jt"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "makan 25rb\nparkir 5rb",
+      "output": {
+        "items": [
+          {
+            "amount": 25000,
+            "description": "makan",
+            "category_hint": "Food",
+            "sourceText": "makan 25rb"
+          },
+          {
+            "amount": 5000,
+            "description": "parkir",
+            "category_hint": "Transportation",
+            "sourceText": "parkir 5rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "medium"
+      }
+    },
+    {
+      "input": "makan 25rb; parkir 5rb",
+      "output": {
+        "items": [
+          {
+            "amount": 25000,
+            "description": "makan",
+            "category_hint": "Food",
+            "sourceText": "makan 25rb"
+          },
+          {
+            "amount": 5000,
+            "description": "parkir",
+            "category_hint": "Transportation",
+            "sourceText": "parkir 5rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "medium"
+      }
+    },
+    {
+      "input": "makan 25rb dan parkir 5rb",
+      "output": {
+        "items": [
+          {
+            "amount": 25000,
+            "description": "makan",
+            "category_hint": "Food",
+            "sourceText": "makan 25rb"
+          },
+          {
+            "amount": 5000,
+            "description": "parkir",
+            "category_hint": "Transportation",
+            "sourceText": "parkir 5rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "medium"
+      }
+    },
+    {
+      "input": "hutang 10k, parkir 10k, beli hadiah 100k",
+      "output": {
+        "items": [
+          {
+            "amount": 10000,
+            "description": "hutang",
+            "category_hint": "Bill",
+            "sourceText": "hutang 10k"
+          },
+          {
+            "amount": 10000,
+            "description": "parkir",
+            "category_hint": "Transportation",
+            "sourceText": "parkir 10k"
+          },
+          {
+            "amount": 100000,
+            "description": "beli hadiah",
+            "sourceText": "beli hadiah 100k"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "medium"
+      }
+    },
+    {
+      "input": "transfer 2.5jt ke adik",
+      "output": {
+        "items": [
+          {
+            "amount": 2500000,
+            "description": "transfer   ke adik",
+            "sourceText": "transfer 2.5jt ke adik"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "top up ovo 100rb",
+      "output": {
+        "items": [
+          {
+            "amount": 100000,
+            "description": "top up ovo",
+            "sourceText": "top up ovo 100rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "bayar plastik 5rb",
+      "output": {
+        "items": [
+          {
+            "amount": 5000,
+            "description": "bayar plastik",
+            "sourceText": "bayar plastik 5rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "bayar air 50rb",
+      "output": {
+        "items": [
+          {
+            "amount": 50000,
+            "description": "bayar air",
+            "sourceText": "bayar air 50rb"
+          }
+        ],
+        "usedAI": false,
+        "confidence": "high"
+      }
+    },
+    {
+      "input": "25rb",
+      "output": null
+    }
+  ]
+}

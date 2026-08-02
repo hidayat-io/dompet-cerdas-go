@@ -1,0 +1,38 @@
+{
+  "source": "functions/src/services/queryService.ts",
+  "fn": "formatTimeRange",
+  "cases": [
+    {
+      "spec": "today",
+      "output": "hari ini"
+    },
+    {
+      "spec": "yesterday",
+      "output": "kemarin"
+    },
+    {
+      "spec": "this_week",
+      "output": "minggu ini"
+    },
+    {
+      "spec": "last_week",
+      "output": "7 hari terakhir"
+    },
+    {
+      "spec": "this_month",
+      "output": "bulan ini"
+    },
+    {
+      "spec": "last_month",
+      "output": "bulan lalu"
+    },
+    {
+      "spec": "all_time",
+      "output": "semua waktu"
+    },
+    {
+      "spec": "unrecognized_spec",
+      "output": "unrecognized_spec"
+    }
+  ]
+}

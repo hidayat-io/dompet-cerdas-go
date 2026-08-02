@@ -1,0 +1,110 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "formatTransactionBatchAdded",
+  "cases": [
+    {
+      "label": "single",
+      "items": [
+        {
+          "amount": 25000,
+          "description": "Makan siang",
+          "categoryName": "Makanan"
+        }
+      ],
+      "output": "✅ *Transaksi berhasil ditambahkan!*\n\n📦 Total transaksi: *1*\n💰 Total nominal: *Rp 25.000*\n\n1. Makan siang • Rp 25.000 • Makanan"
+    },
+    {
+      "label": "three",
+      "items": [
+        {
+          "amount": 25000,
+          "description": "Makan siang",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 5000,
+          "description": "Parkir",
+          "categoryName": "Transport"
+        },
+        {
+          "amount": 18000,
+          "description": "Kopi",
+          "categoryName": "Makanan"
+        }
+      ],
+      "output": "✅ *Transaksi berhasil ditambahkan!*\n\n📦 Total transaksi: *3*\n💰 Total nominal: *Rp 48.000*\n\n1. Makan siang • Rp 25.000 • Makanan\n2. Parkir • Rp 5.000 • Transport\n3. Kopi • Rp 18.000 • Makanan"
+    },
+    {
+      "label": "seven-truncates-at-five",
+      "items": [
+        {
+          "amount": 10000,
+          "description": "Item 1",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 20000,
+          "description": "Item 2",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 30000,
+          "description": "Item 3",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 40000,
+          "description": "Item 4",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 50000,
+          "description": "Item 5",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 60000,
+          "description": "Item 6",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 70000,
+          "description": "Item 7",
+          "categoryName": "Makanan"
+        }
+      ],
+      "output": "✅ *Transaksi berhasil ditambahkan!*\n\n📦 Total transaksi: *7*\n💰 Total nominal: *Rp 280.000*\n\n1. Item 1 • Rp 10.000 • Makanan\n2. Item 2 • Rp 20.000 • Makanan\n3. Item 3 • Rp 30.000 • Makanan\n4. Item 4 • Rp 40.000 • Makanan\n5. Item 5 • Rp 50.000 • Makanan\n... dan 2 transaksi lainnya"
+    },
+    {
+      "label": "exactly-five-no-notice",
+      "items": [
+        {
+          "amount": 10000,
+          "description": "Item 1",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 20000,
+          "description": "Item 2",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 30000,
+          "description": "Item 3",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 40000,
+          "description": "Item 4",
+          "categoryName": "Makanan"
+        },
+        {
+          "amount": 50000,
+          "description": "Item 5",
+          "categoryName": "Makanan"
+        }
+      ],
+      "output": "✅ *Transaksi berhasil ditambahkan!*\n\n📦 Total transaksi: *5*\n💰 Total nominal: *Rp 150.000*\n\n1. Item 1 • Rp 10.000 • Makanan\n2. Item 2 • Rp 20.000 • Makanan\n3. Item 3 • Rp 30.000 • Makanan\n4. Item 4 • Rp 40.000 • Makanan\n5. Item 5 • Rp 50.000 • Makanan"
+    }
+  ]
+}

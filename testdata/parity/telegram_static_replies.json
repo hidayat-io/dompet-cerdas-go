@@ -1,0 +1,47 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "various",
+  "cases": [
+    {
+      "fn": "formatUnknownIntent",
+      "input": null,
+      "output": "🤔 *Maaf, saya belum mengerti.*\n\nCoba:\n• \"berapa pengeluaran minggu ini?\"\n• \"tambah 50000 makan siang\"\n• \"kategori paling boros bulan ini\"\n\nAtau ketik /help untuk panduan lengkap."
+    },
+    {
+      "fn": "formatClarification",
+      "input": "Maksudmu pengeluaran atau pemasukan?",
+      "output": "❓ Maksudmu pengeluaran atau pemasukan?"
+    },
+    {
+      "fn": "formatFinancialAdvice",
+      "input": "Keuanganmu sehat.",
+      "output": "🤖 *AI Financial Advisor - DompetCerdas*\n\nKeuanganmu sehat.\n\n---\n💬 *Mau tanya lebih lanjut?*\nContoh: \"tips hemat kategori Food\", \"kategori mana yang bisa dikurangi?\""
+    },
+    {
+      "fn": "formatSavingsStrategy",
+      "input": "Kurangi kopi harian.",
+      "output": "💰 *Strategi Hemat - DompetCerdas*\n\nKurangi kopi harian.\n\n---\n💬 *Perlu analisa lebih detail?*\nKetik: \"analisa pengeluaranku\" atau \"gimana keuanganku?\""
+    },
+    {
+      "fn": "formatExpenseAnalysis",
+      "input": "Kategori Makanan naik 20%.",
+      "output": "🔍 *Analisa Pengeluaran - DompetCerdas*\n\nKategori Makanan naik 20%.\n\n---\n💬 *Butuh strategi hemat?*\nKetik: \"tips hemat bulan depan\" atau \"saran biar hemat\""
+    },
+    {
+      "fn": "withAccountHeader",
+      "input": [
+        "Pesan isi",
+        "Rumah Tangga"
+      ],
+      "output": "📁 *Akun: Rumah Tangga*\n\nPesan isi"
+    },
+    {
+      "fn": "withAccountHeader",
+      "input": [
+        "Pesan isi",
+        null
+      ],
+      "output": "Pesan isi"
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "source": "functions/src/services/responseFormatter.ts:8-10",
+  "fn": "escapeMarkdown",
+  "note": "Produksi memakai parse_mode Markdown (V1), bukan V2. Character class-nya berisi karakter khusus V2 dan itu memang berlebihan, tapi wajib dipertahankan. null/undefined menjadi string kosong.",
+  "cases": [
+    {
+      "input": "_italic_",
+      "inputWasUndefined": false,
+      "output": "\\_italic\\_"
+    },
+    {
+      "input": "*bold*",
+      "inputWasUndefined": false,
+      "output": "\\*bold\\*"
+    },
+    {
+      "input": "[link](url)",
+      "inputWasUndefined": false,
+      "output": "\\[link\\]\\(url\\)"
+    },
+    {
+      "input": "~strike~",
+      "inputWasUndefined": false,
+      "output": "\\~strike\\~"
+    },
+    {
+      "input": "`code`",
+      "inputWasUndefined": false,
+      "output": "\\`code\\`"
+    },
+    {
+      "input": ">quote",
+      "inputWasUndefined": false,
+      "output": "\\>quote"
+    },
+    {
+      "input": "#hashtag",
+      "inputWasUndefined": false,
+      "output": "\\#hashtag"
+    },
+    {
+      "input": "+plus",
+      "inputWasUndefined": false,
+      "output": "\\+plus"
+    },
+    {
+      "input": "-minus",
+      "inputWasUndefined": false,
+      "output": "\\-minus"
+    },
+    {
+      "input": "=equals",
+      "inputWasUndefined": false,
+      "output": "\\=equals"
+    },
+    {
+      "input": "|pipe",
+      "inputWasUndefined": false,
+      "output": "\\|pipe"
+    },
+    {
+      "input": "{brace}",
+      "inputWasUndefined": false,
+      "output": "\\{brace\\}"
+    },
+    {
+      "input": ".dot",
+      "inputWasUndefined": false,
+      "output": "\\.dot"
+    },
+    {
+      "input": "!bang",
+      "inputWasUndefined": false,
+      "output": "\\!bang"
+    },
+    {
+      "input": "\\backslash",
+      "inputWasUndefined": false,
+      "output": "\\\\backslash"
+    },
+    {
+      "input": "Rp 2.500.000",
+      "inputWasUndefined": false,
+      "output": "Rp 2\\.500\\.000"
+    },
+    {
+      "input": "Rp -50.000",
+      "inputWasUndefined": false,
+      "output": "Rp \\-50\\.000"
+    },
+    {
+      "input": "Makanan & Minuman",
+      "inputWasUndefined": false,
+      "output": "Makanan & Minuman"
+    },
+    {
+      "input": "Toko Abang (Cabang 2)",
+      "inputWasUndefined": false,
+      "output": "Toko Abang \\(Cabang 2\\)"
+    },
+    {
+      "input": "PT. Maju Jaya",
+      "inputWasUndefined": false,
+      "output": "PT\\. Maju Jaya"
+    },
+    {
+      "input": "Transfer ke Budi - DP rumah",
+      "inputWasUndefined": false,
+      "output": "Transfer ke Budi \\- DP rumah"
+    },
+    {
+      "input": "Beli 3 item: kopi, gula, teh.",
+      "inputWasUndefined": false,
+      "output": "Beli 3 item: kopi, gula, teh\\."
+    },
+    {
+      "input": "no special chars here",
+      "inputWasUndefined": false,
+      "output": "no special chars here"
+    },
+    {
+      "input": "",
+      "inputWasUndefined": false,
+      "output": ""
+    },
+    {
+      "input": "a_b*c[d]e(f)g~h`i>j#k+l-m=n|o{p}q.r!s",
+      "inputWasUndefined": false,
+      "output": "a\\_b\\*c\\[d\\]e\\(f\\)g\\~h\\`i\\>j\\#k\\+l\\-m\\=n\\|o\\{p\\}q\\.r\\!s"
+    },
+    {
+      "input": 123,
+      "inputWasUndefined": false,
+      "output": "123"
+    },
+    {
+      "input": 0,
+      "inputWasUndefined": false,
+      "output": "0"
+    },
+    {
+      "input": -50000,
+      "inputWasUndefined": false,
+      "output": "\\-50000"
+    },
+    {
+      "input": null,
+      "inputWasUndefined": false,
+      "output": ""
+    },
+    {
+      "input": null,
+      "inputWasUndefined": true,
+      "output": ""
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "formatCategoryBreakdown",
+  "cases": [
+    {
+      "label": "empty",
+      "categories": [],
+      "timeRange": "bulan ini",
+      "output": "📊 Belum ada pengeluaran bulan ini."
+    },
+    {
+      "label": "three-categories",
+      "categories": [
+        {
+          "category": "Makanan",
+          "amount": 750000,
+          "percentage": 50,
+          "count": 12,
+          "icon": "Utensils"
+        },
+        {
+          "category": "Transport",
+          "amount": 450000,
+          "percentage": 30,
+          "count": 8,
+          "icon": "Car"
+        },
+        {
+          "category": "Belanja",
+          "amount": 300000,
+          "percentage": 20,
+          "count": 3,
+          "icon": ""
+        }
+      ],
+      "timeRange": "bulan ini",
+      "output": "📊 *Pengeluaran per kategori (bulan ini)*:\n\n🍴 Makanan: Rp 750k (50%)\n🚗 Transport: Rp 450k (30%)\n📦 Belanja: Rp 300k (20%)\n\n💰 Total: Rp 1.500.000"
+    },
+    {
+      "label": "more-than-five-truncated",
+      "categories": [
+        {
+          "category": "Kategori 1",
+          "amount": 700000,
+          "percentage": 24.99,
+          "count": 1,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 2",
+          "amount": 600000,
+          "percentage": 21.419999999999998,
+          "count": 2,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 3",
+          "amount": 500000,
+          "percentage": 17.849999999999998,
+          "count": 3,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 4",
+          "amount": 400000,
+          "percentage": 14.28,
+          "count": 4,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 5",
+          "amount": 300000,
+          "percentage": 10.709999999999999,
+          "count": 5,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 6",
+          "amount": 200000,
+          "percentage": 7.14,
+          "count": 6,
+          "icon": ""
+        },
+        {
+          "category": "Kategori 7",
+          "amount": 100000,
+          "percentage": 3.57,
+          "count": 7,
+          "icon": ""
+        }
+      ],
+      "timeRange": "minggu ini",
+      "output": "📊 *Pengeluaran per kategori (minggu ini)*:\n\n📦 Kategori 1: Rp 700k (25%)\n📦 Kategori 2: Rp 600k (21%)\n📦 Kategori 3: Rp 500k (18%)\n📦 Kategori 4: Rp 400k (14%)\n📦 Kategori 5: Rp 300k (11%)\n\n💰 Total: Rp 2.800.000"
+    },
+    {
+      "label": "percentage-rounding",
+      "categories": [
+        {
+          "category": "Makanan",
+          "amount": 333333,
+          "percentage": 33.333,
+          "count": 1,
+          "icon": "Pizza"
+        },
+        {
+          "category": "Lainnya",
+          "amount": 666667,
+          "percentage": 66.667,
+          "count": 2,
+          "icon": "Package"
+        }
+      ],
+      "timeRange": "hari ini",
+      "output": "📊 *Pengeluaran per kategori (hari ini)*:\n\n🍕 Makanan: Rp 333k (33%)\n📦 Lainnya: Rp 667k (67%)\n\n💰 Total: Rp 1.000.000"
+    }
+  ]
+}

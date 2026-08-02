@@ -1,0 +1,127 @@
+{
+  "source": "functions/src/services/responseFormatter.ts:284-299",
+  "fn": "formatRupiah / formatExactRupiah",
+  "note": "toFixed membulatkan, bukan truncate: 25600 -> Rp 26k, 999999 -> Rp 1000k. Negatif selalu jatuh ke branch terakhir karena perbandingan pakai nilai bersigned, jadi -50000 -> Rp -50.000. Tanda minus berada setelah \"Rp \".",
+  "cases": [
+    {
+      "amount": 0,
+      "compact": "Rp 0",
+      "exact": "Rp 0"
+    },
+    {
+      "amount": 1,
+      "compact": "Rp 1",
+      "exact": "Rp 1"
+    },
+    {
+      "amount": 500,
+      "compact": "Rp 500",
+      "exact": "Rp 500"
+    },
+    {
+      "amount": 999,
+      "compact": "Rp 999",
+      "exact": "Rp 999"
+    },
+    {
+      "amount": 1000,
+      "compact": "Rp 1k",
+      "exact": "Rp 1.000"
+    },
+    {
+      "amount": 1001,
+      "compact": "Rp 1k",
+      "exact": "Rp 1.001"
+    },
+    {
+      "amount": 1500,
+      "compact": "Rp 2k",
+      "exact": "Rp 1.500"
+    },
+    {
+      "amount": 25000,
+      "compact": "Rp 25k",
+      "exact": "Rp 25.000"
+    },
+    {
+      "amount": 25600,
+      "compact": "Rp 26k",
+      "exact": "Rp 25.600"
+    },
+    {
+      "amount": 25400,
+      "compact": "Rp 25k",
+      "exact": "Rp 25.400"
+    },
+    {
+      "amount": 99999,
+      "compact": "Rp 100k",
+      "exact": "Rp 99.999"
+    },
+    {
+      "amount": 999499,
+      "compact": "Rp 999k",
+      "exact": "Rp 999.499"
+    },
+    {
+      "amount": 999500,
+      "compact": "Rp 1000k",
+      "exact": "Rp 999.500"
+    },
+    {
+      "amount": 999999,
+      "compact": "Rp 1000k",
+      "exact": "Rp 999.999"
+    },
+    {
+      "amount": 1000000,
+      "compact": "Rp 1.0jt",
+      "exact": "Rp 1.000.000"
+    },
+    {
+      "amount": 1049999,
+      "compact": "Rp 1.0jt",
+      "exact": "Rp 1.049.999"
+    },
+    {
+      "amount": 1050000,
+      "compact": "Rp 1.1jt",
+      "exact": "Rp 1.050.000"
+    },
+    {
+      "amount": 2500000,
+      "compact": "Rp 2.5jt",
+      "exact": "Rp 2.500.000"
+    },
+    {
+      "amount": 1000000000,
+      "compact": "Rp 1000.0jt",
+      "exact": "Rp 1.000.000.000"
+    },
+    {
+      "amount": -1,
+      "compact": "Rp -1",
+      "exact": "Rp -1"
+    },
+    {
+      "amount": -500,
+      "compact": "Rp -500",
+      "exact": "Rp -500"
+    },
+    {
+      "amount": -50000,
+      "compact": "Rp -50.000",
+      "exact": "Rp -50.000"
+    },
+    {
+      "amount": -150000,
+      "compact": "Rp -150.000",
+      "exact": "Rp -150.000"
+    },
+    {
+      "amount": -2500000,
+      "compact": "Rp -2.500.000",
+      "exact": "Rp -2.500.000"
+    }
+  ]
+}

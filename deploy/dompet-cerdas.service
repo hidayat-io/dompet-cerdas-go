@@ -1,0 +1,21 @@
+[Unit]
+Description=DompetCerdas Go Backend API & Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=mthidayat
+Group=mthidayat
+WorkingDirectory=/home/mthidayat/dompet-cerdas-backend
+ExecStart=/home/mthidayat/dompet-cerdas-backend/dompet-cerdas-go
+Restart=always
+RestartSec=5s
+
+# Resource Limits & Hardening
+LimitNOFILE=65536
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dompet-cerdas
+
+[Install]
+WantedBy=multi-user.target

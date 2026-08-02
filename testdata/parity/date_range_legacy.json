@@ -1,0 +1,487 @@
+{
+  "source": "functions/src/services/queryService.ts + functions/src/utils/date.ts",
+  "fn": "getDateRange",
+  "note": "Ini perilaku LAMA, termasuk bug. legacyIsInverted=true menandai range terbalik akibat bug rollover setMonth. Port Go SENGAJA berbeda di kasus itu (lihat ADR-012): last_month harus menghasilkan range bulan sebelumnya yang benar. Kasus lain wajib identik.",
+  "cases": [
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-31",
+      "legacyEnd": "2026-03-31",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-30",
+      "legacyEnd": "2026-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-30",
+      "legacyEnd": "2026-03-31",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-25",
+      "legacyEnd": "2026-03-31",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-02-28",
+      "legacyEnd": "2026-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-01",
+      "legacyEnd": "2026-02-28",
+      "legacyIsInverted": true
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-28",
+      "legacyEnd": "2026-03-28",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2026-03-31T03:00:00Z",
+      "legacyStart": "2026-03-24",
+      "legacyEnd": "2026-03-24",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-15",
+      "legacyEnd": "2026-03-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-14",
+      "legacyEnd": "2026-03-14",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-09",
+      "legacyEnd": "2026-03-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-09",
+      "legacyEnd": "2026-03-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-02-28",
+      "legacyEnd": "2026-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-02-01",
+      "legacyEnd": "2026-02-28",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-12",
+      "legacyEnd": "2026-03-12",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2026-03-15T03:00:00Z",
+      "legacyStart": "2026-03-08",
+      "legacyEnd": "2026-03-08",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-03-01",
+      "legacyEnd": "2026-03-01",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-28",
+      "legacyEnd": "2026-02-28",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-23",
+      "legacyEnd": "2026-03-01",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-23",
+      "legacyEnd": "2026-03-01",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-28",
+      "legacyEnd": "2026-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-01",
+      "legacyEnd": "2026-02-28",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-26",
+      "legacyEnd": "2026-02-26",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2026-03-01T03:00:00Z",
+      "legacyStart": "2026-02-22",
+      "legacyEnd": "2026-02-22",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-29",
+      "legacyEnd": "2026-03-29",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-28",
+      "legacyEnd": "2026-03-28",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-23",
+      "legacyEnd": "2026-03-29",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-23",
+      "legacyEnd": "2026-03-29",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-02-28",
+      "legacyEnd": "2026-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-01",
+      "legacyEnd": "2026-02-28",
+      "legacyIsInverted": true
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-26",
+      "legacyEnd": "2026-03-26",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2026-03-29T03:00:00Z",
+      "legacyStart": "2026-03-22",
+      "legacyEnd": "2026-03-22",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-30",
+      "legacyEnd": "2028-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-29",
+      "legacyEnd": "2028-03-29",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-27",
+      "legacyEnd": "2028-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-24",
+      "legacyEnd": "2028-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-02-29",
+      "legacyEnd": "2028-03-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-01",
+      "legacyEnd": "2028-02-29",
+      "legacyIsInverted": true
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-27",
+      "legacyEnd": "2028-03-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2028-03-30T03:00:00Z",
+      "legacyStart": "2028-03-23",
+      "legacyEnd": "2028-03-23",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "today",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-15",
+      "legacyEnd": "2026-01-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "yesterday",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-14",
+      "legacyEnd": "2026-01-14",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_week",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-12",
+      "legacyEnd": "2026-01-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_week",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-09",
+      "legacyEnd": "2026-01-15",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "this_month",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2025-12-31",
+      "legacyEnd": "2026-01-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "last_month",
+      "extra": null,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2025-12-01",
+      "legacyEnd": "2025-12-31",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2025-10",
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2025-09-30",
+      "legacyEnd": "2025-10-30",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "custom_month",
+      "extra": "2026-02",
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-31",
+      "legacyEnd": "2026-02-27",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 3,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-12",
+      "legacyEnd": "2026-01-12",
+      "legacyIsInverted": false
+    },
+    {
+      "spec": "days_ago",
+      "extra": 7,
+      "refDate": "2026-01-15T03:00:00Z",
+      "legacyStart": "2026-01-08",
+      "legacyEnd": "2026-01-08",
+      "legacyIsInverted": false
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "source": "functions/src/services/nluService.ts",
+  "fn": "shouldPreferAIIntentParsing",
+  "note": "true = query dilempar ke Gemini NLU. false = hasil regex lokal dipakai langsung (hemat biaya). Typo transaksi (transaski/transsaksi/tranaksi) selalu true. Ini akar fix bug v2.8.10.",
+  "cases": [
+    {
+      "message": "10 transaksi terakhir",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": false
+    },
+    {
+      "message": "show 10 last transs",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "10 last txs",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "transaksi transaski bulan ini",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "transsaksi terakhir",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "tranaksi kemarin",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "last 5 trans",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": false
+    },
+    {
+      "message": "5 transaksi terakhir",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": false
+    },
+    {
+      "message": "top 3 transaksi",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": false
+    },
+    {
+      "message": "top 3 transaksi bulan ini",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": false
+    },
+    {
+      "message": "detail pengeluaran kemarin",
+      "simpleIntent": {
+        "intent": "query_details"
+      },
+      "output": true
+    },
+    {
+      "message": "berapa pengeluaran hari ini",
+      "simpleIntent": {
+        "intent": "query_expenses"
+      },
+      "output": false
+    },
+    {
+      "message": "pengeluaran terbesar bulan ini",
+      "simpleIntent": {
+        "intent": "query_expenses"
+      },
+      "output": true
+    },
+    {
+      "message": "pengeluaran minggu ini",
+      "simpleIntent": {
+        "intent": "query_expenses"
+      },
+      "output": false
+    },
+    {
+      "message": "detail pengeluaran",
+      "simpleIntent": {
+        "intent": "query_expenses"
+      },
+      "output": true
+    },
+    {
+      "message": "pemasukan bulan ini",
+      "simpleIntent": {
+        "intent": "query_income"
+      },
+      "output": false
+    },
+    {
+      "message": "pemasukan tertinggi",
+      "simpleIntent": {
+        "intent": "query_income"
+      },
+      "output": true
+    },
+    {
+      "message": "kategori paling boros",
+      "simpleIntent": {
+        "intent": "category_breakdown"
+      },
+      "output": false
+    },
+    {
+      "message": "kategori terbesar",
+      "simpleIntent": {
+        "intent": "category_breakdown"
+      },
+      "output": true
+    },
+    {
+      "message": "breakdown kategori",
+      "simpleIntent": {
+        "intent": "category_breakdown"
+      },
+      "output": false
+    },
+    {
+      "message": "saldo",
+      "simpleIntent": {
+        "intent": "query_balance"
+      },
+      "output": false
+    },
+    {
+      "message": "berapa saldo sekarang",
+      "simpleIntent": {
+        "intent": "query_balance"
+      },
+      "output": false
+    }
+  ]
+}

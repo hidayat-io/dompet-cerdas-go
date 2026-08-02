@@ -1,0 +1,43 @@
+# Compiled binaries
+/bin/
+/dompet-cerdas-go
+/api
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test output
+*.test
+*.out
+coverage.html
+coverage.txt
+
+# Environment files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Service account credentials.
+# The bare filename is listed explicitly: the wildcard patterns below require a
+# prefix, so "service-account.json" — the name deploy.sh actually uploads — would
+# otherwise be committed.
+service-account.json
+*credentials.json
+*service-account.json
+firebase-adminsdk*.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+/tmp/

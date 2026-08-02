@@ -1,0 +1,219 @@
+{
+  "source": "functions/src/services/transactionParsingService.ts",
+  "fn": "shouldAttemptTransactionParsing",
+  "note": "true = pesan diteruskan ke parser transaksi. false = pesan dianggap query/command dan tidak boleh diparse sebagai transaksi. False positive di sini menyebabkan transaksi salah tersimpan.",
+  "cases": [
+    {
+      "input": "makan siang 25rb",
+      "output": true
+    },
+    {
+      "input": "kopi 18rb, parkir 5rb",
+      "output": true
+    },
+    {
+      "input": "tambah 50000 makan siang",
+      "output": true
+    },
+    {
+      "input": "catat 150000 bensin",
+      "output": true
+    },
+    {
+      "input": "tambahin 20k gojek",
+      "output": true
+    },
+    {
+      "input": "catatkan 75rb belanja",
+      "output": true
+    },
+    {
+      "input": "input 30rb pulsa",
+      "output": true
+    },
+    {
+      "input": "masukin 12rb kopi",
+      "output": true
+    },
+    {
+      "input": "bayar listrik 350rb",
+      "output": false
+    },
+    {
+      "input": "beli obat 45000",
+      "output": true
+    },
+    {
+      "input": "gaji 5jt",
+      "output": true
+    },
+    {
+      "input": "bonus 1,5jt",
+      "output": true
+    },
+    {
+      "input": "makan 25rb\nparkir 5rb",
+      "output": true
+    },
+    {
+      "input": "makan 25rb; parkir 5rb",
+      "output": true
+    },
+    {
+      "input": "makan 25rb dan parkir 5rb",
+      "output": true
+    },
+    {
+      "input": "hutang 10k, parkir 10k, beli hadiah 100k",
+      "output": true
+    },
+    {
+      "input": "transfer 2.5jt ke adik",
+      "output": true
+    },
+    {
+      "input": "top up ovo 100rb",
+      "output": true
+    },
+    {
+      "input": "listrik 350rb",
+      "output": false
+    },
+    {
+      "input": "beli listrik pln 100rb",
+      "output": false
+    },
+    {
+      "input": "bayar plastik 5rb",
+      "output": true
+    },
+    {
+      "input": "daftar belanja 50rb",
+      "output": false
+    },
+    {
+      "input": "riwayat 10rb",
+      "output": false
+    },
+    {
+      "input": "total 5rb",
+      "output": false
+    },
+    {
+      "input": "bayar air 50rb",
+      "output": true
+    },
+    {
+      "input": "berapa pengeluaran hari ini?",
+      "output": false
+    },
+    {
+      "input": "berapa pengeluaran hari ini",
+      "output": false
+    },
+    {
+      "input": "pengeluaran minggu ini ada berapa",
+      "output": false
+    },
+    {
+      "input": "saldo",
+      "output": false
+    },
+    {
+      "input": "saldo berapa",
+      "output": false
+    },
+    {
+      "input": "10 trans terbesar",
+      "output": false
+    },
+    {
+      "input": "10 transaksi terakhir",
+      "output": false
+    },
+    {
+      "input": "show 10 last transs",
+      "output": false
+    },
+    {
+      "input": "10 last txs",
+      "output": false
+    },
+    {
+      "input": "20 transaksi terakhir",
+      "output": false
+    },
+    {
+      "input": "3 transaksi tertinggi bulan ini",
+      "output": false
+    },
+    {
+      "input": "kategori paling boros",
+      "output": false
+    },
+    {
+      "input": "kategori apa aja",
+      "output": false
+    },
+    {
+      "input": "detail pengeluaran kemarin",
+      "output": false
+    },
+    {
+      "input": "transaksi food bulan ini",
+      "output": false
+    },
+    {
+      "input": "rincian kategori Food bulan ini",
+      "output": false
+    },
+    {
+      "input": "gimana keuanganku bulan ini?",
+      "output": false
+    },
+    {
+      "input": "tips hemat bulan depan",
+      "output": false
+    },
+    {
+      "input": "analisa pengeluaran aku",
+      "output": false
+    },
+    {
+      "input": "",
+      "output": false
+    },
+    {
+      "input": "   ",
+      "output": false
+    },
+    {
+      "input": "/start",
+      "output": false
+    },
+    {
+      "input": "/help",
+      "output": false
+    },
+    {
+      "input": "/akun",
+      "output": false
+    },
+    {
+      "input": "halo",
+      "output": false
+    },
+    {
+      "input": "makan siang",
+      "output": false
+    },
+    {
+      "input": "25rb",
+      "output": true
+    },
+    {
+      "input": "apa kabar",
+      "output": false
+    }
+  ]
+}

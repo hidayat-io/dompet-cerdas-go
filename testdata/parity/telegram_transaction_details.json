@@ -1,0 +1,177 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "formatTransactionDetails",
+  "cases": [
+    {
+      "label": "empty",
+      "details": [],
+      "timeRange": "bulan ini",
+      "output": "📋 Belum ada transaksi bulan ini."
+    },
+    {
+      "label": "single-day-simple-list",
+      "details": [
+        {
+          "description": "Makan siang",
+          "amount": 25000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Utensils",
+          "type": "EXPENSE"
+        },
+        {
+          "description": "Kopi",
+          "amount": 18000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Coffee",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "hari ini",
+      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 43.000 (2x)\n\n\n1. ➖ *Makan siang*\n   💵 Rp 25.000 • 🍴 Makanan\n2. ➖ *Kopi*\n   💵 Rp 18.000 • ☕ Makanan"
+    },
+    {
+      "label": "single-day-kemarin",
+      "details": [
+        {
+          "description": "Parkir",
+          "amount": 5000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Car",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "kemarin",
+      "output": "📋 *Detail transaksi kemarin*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 5.000 (1x)\n\n\n1. ➖ *Parkir*\n   💵 Rp 5.000 • 🚗 Makanan"
+    },
+    {
+      "label": "multi-day-grouped",
+      "details": [
+        {
+          "description": "Makan siang",
+          "amount": 25000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Utensils",
+          "type": "EXPENSE"
+        },
+        {
+          "description": "Bensin",
+          "amount": 50000,
+          "category": "Transport",
+          "date": "2026-01-14",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Fuel",
+          "type": "EXPENSE"
+        },
+        {
+          "description": "Gaji",
+          "amount": 5000000,
+          "category": "Gaji",
+          "date": "2026-01-01",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Wallet",
+          "type": "INCOME"
+        }
+      ],
+      "timeRange": "bulan ini",
+      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 5.000.000 (1x)\n  ➖ Pengeluaran: Rp 75.000 (2x)\n  💎 Saldo: Rp 4.925.000\n\n\n📅 *15 Jan \\- Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n\n📅 *14 Jan \\- Rabu*\n➖ Bensin\n  💵 Rp 50.000 • ⛽ Transport\n\n📅 *1 Jan \\- Kamis*\n➕ Gaji\n  💵 Rp 5.000.000 • 👛 Gaji"
+    },
+    {
+      "label": "income-only",
+      "details": [
+        {
+          "description": "Bonus",
+          "amount": 1500000,
+          "category": "Gaji",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Coins",
+          "type": "INCOME"
+        }
+      ],
+      "timeRange": "bulan ini",
+      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 1.500.000 (1x)\n\n\n📅 *15 Jan \\- Kamis*\n➕ Bonus\n  💵 Rp 1.500.000 • 🪙 Gaji"
+    },
+    {
+      "label": "with-notice-and-limit",
+      "details": [
+        {
+          "description": "Makan siang",
+          "amount": 25000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Utensils",
+          "type": "EXPENSE"
+        },
+        {
+          "description": "Belanja",
+          "amount": 120000,
+          "category": "Belanja",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "30 transaksi terakhir",
+      "notice": "⚠️ Maksimal 30 transaksi. Menampilkan 30 transaksi terakhir.",
+      "output": "📋 *Detail transaksi 30 transaksi terakhir*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 145.000 (2x)\n\n⚠️ Maksimal 30 transaksi. Menampilkan 30 transaksi terakhir.\n\n\n📅 *15 Jan \\- Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n➖ Belanja\n  💵 Rp 120.000 • 📦 Belanja"
+    },
+    {
+      "label": "markdown-escaping",
+      "details": [
+        {
+          "description": "Beli buku *diskon* 50% [promo]",
+          "amount": 25000,
+          "category": "Belanja_Harian",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "Book",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "hari ini",
+      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 25.000 (1x)\n\n\n1. ➖ *Beli buku \\*diskon\\* 50% \\[promo\\]*\n   💵 Rp 25.000 • 📚 Belanja\\_Harian"
+    },
+    {
+      "label": "unknown-icon-falls-back",
+      "details": [
+        {
+          "description": "Makan siang",
+          "amount": 25000,
+          "category": "Makanan",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "NoSuchIconName",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "hari ini",
+      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 25.000 (1x)\n\n\n1. ➖ *Makan siang*\n   💵 Rp 25.000 • 📦 Makanan"
+    },
+    {
+      "label": "no-icon-category-emoji-fallback",
+      "details": [
+        {
+          "description": "Makan siang",
+          "amount": 25000,
+          "category": "Transport",
+          "date": "2026-01-15",
+          "createdAt": "2026-01-15T05:00:00.000Z",
+          "icon": "",
+          "type": "EXPENSE"
+        }
+      ],
+      "timeRange": "hari ini",
+      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 25.000 (1x)\n\n\n1. ➖ *Makan siang*\n   💵 Rp 25.000 • 📦 Transport"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "source": "functions/src/services/transactionParsingService.ts:100-136",
+  "fn": "parseAmountToken",
+  "note": "Dengan suffix: koma = desimal (2,5jt -> 2500000). Tanpa suffix: titik dan koma dibuang sebagai pemisah ribuan (150.000 -> 150000). WART: tanpa suffix, 150.50 -> 15050, bukan 150.5. Dipertahankan demi paritas produksi.",
+  "cases": [
+    {
+      "input": "25k",
+      "output": 25000
+    },
+    {
+      "input": "25rb",
+      "output": 25000
+    },
+    {
+      "input": "25ribu",
+      "output": 25000
+    },
+    {
+      "input": "25K",
+      "output": 25000
+    },
+    {
+      "input": "2,5ribu",
+      "output": 2500
+    },
+    {
+      "input": "2jt",
+      "output": 2000000
+    },
+    {
+      "input": "2juta",
+      "output": 2000000
+    },
+    {
+      "input": "2,5jt",
+      "output": 2500000
+    },
+    {
+      "input": "1.5jt",
+      "output": 1500000
+    },
+    {
+      "input": "2.5jt",
+      "output": 2500000
+    },
+    {
+      "input": "1m",
+      "output": 1000000000
+    },
+    {
+      "input": "1milyar",
+      "output": 1000000000
+    },
+    {
+      "input": "1miliar",
+      "output": 1000000000
+    },
+    {
+      "input": "2,5miliar",
+      "output": 2500000000
+    },
+    {
+      "input": "5m",
+      "output": 5000000000
+    },
+    {
+      "input": "50000",
+      "output": 50000
+    },
+    {
+      "input": "150.000",
+      "output": 150000
+    },
+    {
+      "input": "20,000",
+      "output": 20000
+    },
+    {
+      "input": "1.500.000",
+      "output": 1500000
+    },
+    {
+      "input": "150.50",
+      "output": 15050
+    },
+    {
+      "input": "Rp 25000",
+      "output": 25000
+    },
+    {
+      "input": "rp25k",
+      "output": 25000
+    },
+    {
+      "input": "IDR 50.000",
+      "output": 50000
+    },
+    {
+      "input": "rp 1.250.000",
+      "output": 1250000
+    },
+    {
+      "input": "",
+      "output": null
+    },
+    {
+      "input": "jt",
+      "output": null
+    },
+    {
+      "input": "abc",
+      "output": null
+    },
+    {
+      "input": "500",
+      "output": 500
+    },
+    {
+      "input": "999",
+      "output": 999
+    },
+    {
+      "input": "1000",
+      "output": 1000
+    },
+    {
+      "input": "999999",
+      "output": 999999
+    },
+    {
+      "input": "1000000",
+      "output": 1000000
+    },
+    {
+      "input": "25 rb",
+      "output": 25000
+    },
+    {
+      "input": "10rb",
+      "output": 10000
+    },
+    {
+      "input": "1,25juta",
+      "output": 1250000
+    },
+    {
+      "input": "0,5jt",
+      "output": 500000
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "formatAutoSavedTransaction",
+  "cases": [
+    {
+      "label": "plain",
+      "amount": 25000,
+      "description": "Makan siang",
+      "categoryName": "Makanan",
+      "output": "⚡ *Tersimpan otomatis!*\n\n💰 Rp 25.000 — Makan siang\n🏷️ Kategori: Makanan\n\n_Ada yang salah? Hapus manual di aplikasi ya._"
+    },
+    {
+      "label": "needs-escaping",
+      "amount": 1500000,
+      "description": "Gaji_bulanan (net)",
+      "categoryName": "Gaji",
+      "output": "⚡ *Tersimpan otomatis!*\n\n💰 Rp 1.500.000 — Gaji\\_bulanan \\(net\\)\n🏷️ Kategori: Gaji\n\n_Ada yang salah? Hapus manual di aplikasi ya._"
+    },
+    {
+      "label": "small-amount",
+      "amount": 500,
+      "description": "Permen",
+      "categoryName": "Belanja",
+      "output": "⚡ *Tersimpan otomatis!*\n\n💰 Rp 500 — Permen\n🏷️ Kategori: Belanja\n\n_Ada yang salah? Hapus manual di aplikasi ya._"
+    }
+  ]
+}

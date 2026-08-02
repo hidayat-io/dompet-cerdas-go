@@ -1,0 +1,4 @@
+# Ganti api.dompas.indoomega.my.id dengan domain/subdomain API Anda
+api.dompas.indoomega.my.id {
+    reverse_proxy localhost:8080
+}

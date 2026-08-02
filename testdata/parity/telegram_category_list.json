@@ -1,0 +1,69 @@
+{
+  "source": "functions/src/services/responseFormatter.ts",
+  "fn": "formatCategoryList",
+  "cases": [
+    {
+      "label": "empty",
+      "categories": [],
+      "output": "📋 Belum ada kategori yang dibuat.\n\n💡 Buat kategori baru di aplikasi web DompetCerdas."
+    },
+    {
+      "label": "expense-and-income",
+      "categories": [
+        {
+          "id": "c1",
+          "name": "Makanan",
+          "type": "EXPENSE"
+        },
+        {
+          "id": "c2",
+          "name": "Transport",
+          "type": "EXPENSE"
+        },
+        {
+          "id": "c3",
+          "name": "Gaji",
+          "type": "INCOME"
+        }
+      ],
+      "output": "📋 *Daftar Kategori Tersedia*\n\n💸 *Pengeluaran* (2 kategori)\n   1. Makanan\n   2. Transport\n\n💰 *Pemasukan* (1 kategori)\n   1. Gaji\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
+    },
+    {
+      "label": "missing-type-counts-as-expense",
+      "categories": [
+        {
+          "id": "c1",
+          "name": "Tanpa Tipe"
+        },
+        {
+          "id": "c2",
+          "name": "Bonus",
+          "type": "INCOME"
+        }
+      ],
+      "output": "📋 *Daftar Kategori Tersedia*\n\n💸 *Pengeluaran* (1 kategori)\n   1. Tanpa Tipe\n\n💰 *Pemasukan* (1 kategori)\n   1. Bonus\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
+    },
+    {
+      "label": "income-only",
+      "categories": [
+        {
+          "id": "c1",
+          "name": "Gaji",
+          "type": "INCOME"
+        }
+      ],
+      "output": "📋 *Daftar Kategori Tersedia*\n\n💰 *Pemasukan* (1 kategori)\n   1. Gaji\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
+    },
+    {
+      "label": "name-needs-escaping",
+      "categories": [
+        {
+          "id": "c1",
+          "name": "Rumah_Tangga (utama)",
+          "type": "EXPENSE"
+        }
+      ],
+      "output": "📋 *Daftar Kategori Tersedia*\n\n💸 *Pengeluaran* (1 kategori)\n   1. Rumah\\_Tangga \\(utama\\)\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
+    }
+  ]
+}

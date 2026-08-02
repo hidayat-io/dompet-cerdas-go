@@ -1,0 +1,528 @@
+{
+  "source": "functions/src/services/nluService.ts",
+  "fn": "parseIntent",
+  "generatedAt": "2026-08-01T15:54:49.036Z",
+  "note": "output intent \"unknown\" berarti classifier lokal tidak bisa memutuskan dan melempar ke LLM. Port Go harus mengembalikan nil di titik yang sama, bukan memaksa hasil lokal. Perhatikan time_range default: query_details tanpa limit dan tanpa specific_date default ke this_week; expenses/income default ke this_month. category_filter dari pola \"kategori X\" tidak dinormalisasi (tetap lowercase), sedangkan dari tabel nama kategori dinormalisasi (Title Case).",
+  "cases": [
+    {
+      "message": "saldo",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "saldo berapa",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "berapa saldo",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "berapa saldo sekarang",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "balance",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "sisa uang",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "saldo hari ini",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "saldo bulan lalu",
+      "output": {
+        "intent": "query_balance",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "last_month"
+        }
+      }
+    },
+    {
+      "message": "kategori apa aja",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "kategori apa saja",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "ada kategori apa",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "list kategori",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "daftar kategori",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "kategori yang ada",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "kategori tersedia",
+      "output": {
+        "intent": "list_categories",
+        "confidence": "high",
+        "parameters": {}
+      }
+    },
+    {
+      "message": "kategori paling boros",
+      "output": {
+        "intent": "category_breakdown",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "breakdown kategori",
+      "output": {
+        "intent": "category_breakdown",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "breakdown kategori bulan lalu",
+      "output": {
+        "intent": "category_breakdown",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "last_month"
+        }
+      }
+    },
+    {
+      "message": "pengeluaran per kategori",
+      "output": {
+        "intent": "category_breakdown",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "paling banyak",
+      "output": {
+        "intent": "category_breakdown",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "detail pengeluaran kemarin",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "yesterday",
+          "type_filter": "EXPENSE"
+        }
+      }
+    },
+    {
+      "message": "rincian transaksi hari ini",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "5 transaksi terakhir",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "limit": 5,
+          "sort_by": "date"
+        }
+      }
+    },
+    {
+      "message": "10 transaksi terakhir",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "limit": 10,
+          "sort_by": "date"
+        }
+      }
+    },
+    {
+      "message": "top 3 transaksi",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "limit": 3,
+          "sort_by": "amount"
+        }
+      }
+    },
+    {
+      "message": "3 transaksi tertinggi bulan ini",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month",
+          "limit": 3,
+          "sort_by": "amount"
+        }
+      }
+    },
+    {
+      "message": "transaksi 27 jan",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "specific_date": "2026-01-27"
+        }
+      }
+    },
+    {
+      "message": "transaksi tanggal 5",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "specific_date": "2026-08-05"
+        }
+      }
+    },
+    {
+      "message": "detail kategori food",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_week",
+          "category_filter": "food"
+        }
+      }
+    },
+    {
+      "message": "transaksi food bulan ini",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month",
+          "category_filter": "Food"
+        }
+      }
+    },
+    {
+      "message": "detail pengeluaran 7 hari terakhir",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "last_week",
+          "type_filter": "EXPENSE"
+        }
+      }
+    },
+    {
+      "message": "tampilkan transaksi minggu ini",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_week"
+        }
+      }
+    },
+    {
+      "message": "list transaksi",
+      "output": {
+        "intent": "query_details",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_week"
+        }
+      }
+    },
+    {
+      "message": "berapa pengeluaran hari ini",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "pengeluaran hari ini berapa",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "hari ini ada pengeluaran ga",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "total pengeluaran",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "pengeluaran bulan ini",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "pengeluaran bulan lalu",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "last_month"
+        }
+      }
+    },
+    {
+      "message": "pengeluaran 7 hari terakhir",
+      "output": {
+        "intent": "query_expenses",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "last_week"
+        }
+      }
+    },
+    {
+      "message": "berapa pemasukan bulan ini",
+      "output": {
+        "intent": "query_income",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "pemasukan hari ini",
+      "output": {
+        "intent": "query_income",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "today"
+        }
+      }
+    },
+    {
+      "message": "total pemasukan",
+      "output": {
+        "intent": "query_income",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "gimana keuanganku bulan ini",
+      "output": {
+        "intent": "financial_advice",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "analisa pengeluaran aku",
+      "output": {
+        "intent": "financial_advice",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "tips hemat bulan depan",
+      "output": {
+        "intent": "savings_strategy",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "saran biar lebih hemat",
+      "output": {
+        "intent": "savings_strategy",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "strategi hemat",
+      "output": {
+        "intent": "savings_strategy",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "kategori mana yang bisa dikurangi",
+      "output": {
+        "intent": "expense_analysis",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "gimana caranya potong pengeluaran",
+      "output": {
+        "intent": "expense_analysis",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "kasih insight dong",
+      "output": {
+        "intent": "financial_advice",
+        "confidence": "high",
+        "parameters": {
+          "time_range": "this_month"
+        }
+      }
+    },
+    {
+      "message": "halo",
+      "output": {
+        "intent": "unknown",
+        "confidence": "low",
+        "parameters": {},
+        "clarification_needed": "Maaf, saya kurang mengerti. Coba ketik /help untuk contoh."
+      }
+    },
+    {
+      "message": "apa kabar",
+      "output": {
+        "intent": "unknown",
+        "confidence": "low",
+        "parameters": {},
+        "clarification_needed": "Maaf, saya kurang mengerti. Coba ketik /help untuk contoh."
+      }
+    },
+    {
+      "message": "makan siang",
+      "output": {
+        "intent": "unknown",
+        "confidence": "low",
+        "parameters": {},
+        "clarification_needed": "Maaf, saya kurang mengerti. Coba ketik /help untuk contoh."
+      }
+    }
+  ]
+}
