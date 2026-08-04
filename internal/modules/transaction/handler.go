@@ -3,6 +3,7 @@ package transaction
 import (
 	"encoding/base64"
 	"errors"
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
 
@@ -55,6 +56,10 @@ func (h *Handler) ScanReceipt(c *gin.Context) {
 			response.BadRequest(c, "Ukuran gambar melebihi 5MB.", "IMAGE_TOO_LARGE", nil)
 			return
 		}
+		slog.Error("scan receipt failed",
+			"error", err,
+			"bytes", len(raw),
+		)
 		response.InternalErrorWithMessage(c, "Gagal membaca struk. Coba foto ulang dengan pencahayaan lebih baik.")
 		return
 	}
