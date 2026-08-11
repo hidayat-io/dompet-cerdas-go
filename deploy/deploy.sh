@@ -21,7 +21,11 @@ echo "📂 Preparing remote directory at ${SERVER_HOST}:${REMOTE_DIR}..."
 ssh "${SERVER_HOST}" "mkdir -p ${REMOTE_DIR}"
 
 # 3. Upload binary and configs via scp
+# The old binary is renamed out of the way first: systemd keeps it open while
+# running, and scp truncating that path in place fails with ETXTBSY.
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 echo "📤 Uploading binary and deployment files to ${SERVER_HOST}..."
+ssh "${SERVER_HOST}" "[ -f ${REMOTE_DIR}/${BINARY_NAME} ] && mv ${REMOTE_DIR}/${BINARY_NAME} ${REMOTE_DIR}/${BINARY_NAME}.bak-${TIMESTAMP} || true"
 scp "${LOCAL_BUILD_DIR}/${BINARY_NAME}" "${SERVER_HOST}:${REMOTE_DIR}/"
 scp deploy/dompet-cerdas.service "${SERVER_HOST}:${REMOTE_DIR}/"
 scp deploy/Caddyfile "${SERVER_HOST}:${REMOTE_DIR}/"

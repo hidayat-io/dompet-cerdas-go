@@ -1,4 +1,4 @@
-.PHONY: run build test test-race test-cover lint verify tidy docker-build docker-up docker-down help
+.PHONY: run build test test-race test-cover lint verify tidy docker-build docker-up docker-down deploy help
 
 # Default target
 .DEFAULT_GOAL := help
