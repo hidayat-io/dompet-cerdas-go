@@ -1,12 +1,55 @@
 package transaction
 
 import (
+	"context"
+	"errors"
 	"regexp"
 	"strings"
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/money"
 )
+
+// TextParser is the AI fallback for free-form transaction messages.
+type TextParser interface {
+	ParseTransaction(ctx context.Context, message string) (*domain.HybridTransactionParseResult, error)
+}
+
+// ParseWithFallback tries the deterministic parser first, then asks the AI
+// parser only when the message looks like a transaction but local parsing fails.
+// AI results are always marked as AI-generated so they cannot auto-save.
+func ParseWithFallback(ctx context.Context, message string, parser TextParser) (*domain.HybridTransactionParseResult, error) {
+	if !ShouldAttemptTransactionParsing(message) && !ShouldAttemptAITransactionParsing(message) {
+		return nil, nil
+	}
+
+	if parsed := ParseLocally(message); parsed != nil && len(parsed.Items) > 0 {
+		return parsed, nil
+	}
+	if parser == nil {
+		return nil, nil
+	}
+
+	parsed, err := parser.ParseTransaction(ctx, message)
+	if err != nil {
+		return nil, err
+	}
+	if parsed == nil || len(parsed.Items) == 0 {
+		return nil, errors.New("AI returned no transaction items")
+	}
+
+	normalized := NormalizeParsedTransactionDrafts(parsed.Items)
+	if len(normalized) != len(parsed.Items) {
+		return nil, errors.New("AI returned an incomplete transaction")
+	}
+	if len(normalized) > MaxParsedTransactionItems {
+		return nil, errors.New("AI returned too many transaction items")
+	}
+
+	parsed.Items = normalized
+	parsed.UsedAI = true
+	return parsed, nil
+}
 
 var (
 	queryKeywords = []string{
@@ -22,9 +65,24 @@ var (
 	QueryRankingRegex         = regexp.MustCompile(`(?i)\b(top|biggest|highest|largest|tertinggi|terbesar|terbanyak)\b`)
 	EntryPrefixRegex          = regexp.MustCompile(`(?i)^(tambah(?:in)?|catat(?:kan)?|input|masukin|masukan|record|log)\s+`)
 	ExplicitEntryVerb         = regexp.MustCompile(`(?i)^(tambah(?:in)?|catat(?:kan)?|input|masukin|masukan)\b`)
+	AITransactionActionRegex  = regexp.MustCompile(`(?i)\b(?:beli|bayar|makan|minum|kopi|parkir|belanja|transfer|top\s*up|isi\s+ulang|gaji|bonus|terima)\b`)
+	AINominalWordRegex        = regexp.MustCompile(`(?i)\b(?:ribu|juta|rupiah|rb|jt|milyar|miliar|seribu|sejuta)\b`)
 	AmountRegex               = regexp.MustCompile(`(?i)(?:rp\s*|idr\s*)?\d[\d.,]*\s*(?:k|rb|ribu|jt|juta|m|milyar|miliar)?\b`)
+	ProductVolumeSuffixRegex  = regexp.MustCompile(`(?i)^\d*(?:[.,]\d+)?\s*(?:ml|l|liter|litre)\b`)
 	LocalMultiEntrySeparator  = regexp.MustCompile(`(?i)\s+(?:dan|lalu|terus|trus|&)\s+`)
 )
+
+func ShouldAttemptAITransactionParsing(message string) bool {
+	trimmed := strings.TrimSpace(message)
+	if trimmed == "" || strings.HasPrefix(trimmed, "/") || strings.ContainsAny(trimmed, "?？") {
+		return false
+	}
+	if containsQueryKeywords(trimmed) && !ExplicitEntryVerb.MatchString(trimmed) {
+		return false
+	}
+	return (ExplicitEntryVerb.MatchString(trimmed) || AITransactionActionRegex.MatchString(trimmed)) &&
+		AINominalWordRegex.MatchString(trimmed)
+}
 
 func containsQueryKeywords(message string) bool {
 	lower := strings.ToLower(message)
@@ -37,6 +95,18 @@ func containsQueryKeywords(message string) bool {
 		}
 	}
 	return false
+}
+
+func amountMatches(message string) []string {
+	indexes := AmountRegex.FindAllStringIndex(message, -1)
+	matches := make([]string, 0, len(indexes))
+	for _, index := range indexes {
+		if ProductVolumeSuffixRegex.MatchString(message[index[1]:]) {
+			continue
+		}
+		matches = append(matches, message[index[0]:index[1]])
+	}
+	return matches
 }
 
 func looksLikeQueryMessage(message string) bool {
@@ -88,7 +158,7 @@ func ShouldAttemptTransactionParsing(message string) bool {
 		return false
 	}
 
-	if !AmountRegex.MatchString(trimmed) {
+	if len(amountMatches(trimmed)) == 0 {
 		return false
 	}
 
@@ -161,7 +231,7 @@ func splitCandidateSegments(message string) []string {
 		return nil
 	}
 
-	amountCount := len(AmountRegex.FindAllString(normalized, -1))
+	amountCount := len(amountMatches(normalized))
 
 	var raw []string
 	switch {
@@ -199,7 +269,7 @@ func extractManualTransactionLocal(segment string) *domain.ParsedTransactionDraf
 		cleanedMessage = strings.TrimSpace(cleanedMessage)
 	}
 
-	matches := AmountRegex.FindAllString(cleanedMessage, -1)
+	matches := amountMatches(cleanedMessage)
 	if len(matches) != 1 {
 		return nil
 	}

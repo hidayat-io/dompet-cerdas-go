@@ -1,7 +1,9 @@
 package transaction
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
@@ -29,6 +31,86 @@ func TestShouldAttemptTransactionParsing_Fixtures(t *testing.T) {
 		if got := ShouldAttemptTransactionParsing(c.Input); got != c.Output {
 			t.Errorf("ShouldAttemptTransactionParsing(%q) = %v, want %v", c.Input, got, c.Output)
 		}
+	}
+}
+
+type stubTextParser struct {
+	called bool
+	result *domain.HybridTransactionParseResult
+	err    error
+}
+
+func (s *stubTextParser) ParseTransaction(context.Context, string) (*domain.HybridTransactionParseResult, error) {
+	s.called = true
+	return s.result, s.err
+}
+
+func TestParseWithFallback_LocalParseWinsOverAI(t *testing.T) {
+	stub := &stubTextParser{}
+	got, err := ParseWithFallback(context.Background(), "makan 25rb", stub)
+	if err != nil {
+		t.Fatalf("ParseWithFallback: %v", err)
+	}
+	if got == nil || got.Items[0].Amount != 25_000 {
+		t.Fatalf("result = %+v, want local transaction", got)
+	}
+	if stub.called {
+		t.Error("AI parser was called despite a successful local parse")
+	}
+}
+
+func TestParseWithFallback_UsesAIWhenLocalParseFails(t *testing.T) {
+	stub := &stubTextParser{result: &domain.HybridTransactionParseResult{
+		Items:      []domain.ParsedTransactionDraft{{Amount: 6_000, Description: "air minum"}},
+		Confidence: domain.ConfidenceHigh,
+	}}
+	got, err := ParseWithFallback(context.Background(), "tolong catat minum enam ribu", stub)
+	if err != nil {
+		t.Fatalf("ParseWithFallback: %v", err)
+	}
+	if !stub.called {
+		t.Error("AI parser was not called after local parse failed")
+	}
+	if got == nil || !got.UsedAI {
+		t.Fatalf("result = %+v, want UsedAI=true", got)
+	}
+	if ShouldAutoSave(got, false) {
+		t.Error("AI result must never be eligible for auto-save")
+	}
+}
+
+func TestParseWithFallback_DoesNotSendQueriesToAI(t *testing.T) {
+	stub := &stubTextParser{}
+	got, err := ParseWithFallback(context.Background(), "berapa pengeluaran 5 ribu minggu ini?", stub)
+	if err != nil {
+		t.Fatalf("ParseWithFallback: %v", err)
+	}
+	if got != nil {
+		t.Errorf("result = %+v, want nil for query", got)
+	}
+	if stub.called {
+		t.Error("AI parser was called for a query")
+	}
+}
+
+func TestParseWithFallback_RejectsInvalidAIResult(t *testing.T) {
+	tests := []struct {
+		name   string
+		result *domain.HybridTransactionParseResult
+		err    error
+	}{
+		{name: "empty", result: &domain.HybridTransactionParseResult{}},
+		{name: "partial", result: &domain.HybridTransactionParseResult{Items: []domain.ParsedTransactionDraft{{Amount: 10_000, Description: "makan"}, {Amount: 0, Description: "hilang"}}}},
+		{name: "parser_error", err: errors.New("AI unavailable")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseWithFallback(context.Background(), "catat sepuluh ribu makan", &stubTextParser{result: tt.result, err: tt.err})
+			if err == nil {
+				t.Fatal("ParseWithFallback returned nil error for invalid AI result")
+			}
+		})
 	}
 }
 
@@ -287,5 +369,32 @@ func TestParseLocally_CommaNotSplitWithSingleAmount(t *testing.T) {
 	}
 	if len(got.Items) != 1 {
 		t.Fatalf("got %d items, want 1: %+v", len(got.Items), got.Items)
+	}
+}
+
+func TestParseLocally_IgnoresProductVolumeAsAmount(t *testing.T) {
+	tests := []struct {
+		input      string
+		wantAmount int64
+		wantDesc   string
+	}{
+		{input: "6k Le Minerale 1.5L", wantAmount: 6_000, wantDesc: "Le Minerale 1.5L"},
+		{input: "6k Air Minum Le Minerale 1.5L", wantAmount: 6_000, wantDesc: "Air Minum Le Minerale 1.5L"},
+		{input: "6k Beli Air Minum 1.5L", wantAmount: 6_000, wantDesc: "Beli Air Minum 1.5L"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := ParseLocally(tt.input)
+			if got == nil || len(got.Items) != 1 {
+				t.Fatalf("ParseLocally(%q) = %+v, want one item", tt.input, got)
+			}
+			if got.Items[0].Amount != tt.wantAmount {
+				t.Errorf("amount = %d, want %d", got.Items[0].Amount, tt.wantAmount)
+			}
+			if got.Items[0].Description != tt.wantDesc {
+				t.Errorf("description = %q, want %q", got.Items[0].Description, tt.wantDesc)
+			}
+		})
 	}
 }

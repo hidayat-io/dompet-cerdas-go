@@ -72,6 +72,7 @@ func main() {
 	// categories deterministically and simply asks for confirmation more often,
 	// rather than refusing to record transactions.
 	var categoryClassifier transaction.Classifier
+	var transactionParser transaction.TextParser
 	var receiptAnalyzer transaction.ReceiptAnalyzer
 	var insightGenerator advisor.InsightGenerator
 	var voiceTranscriber telegram.Transcriber
@@ -79,6 +80,7 @@ func main() {
 		slog.Warn("Gemini unavailable, category classification and receipt scanning will degrade", "error", err)
 	} else {
 		categoryClassifier = geminiClient
+		transactionParser = geminiClient
 		receiptAnalyzer = geminiClient
 		insightGenerator = geminiClient
 		voiceTranscriber = geminiClient
@@ -94,6 +96,7 @@ func main() {
 		accountService,
 		accountRepository,
 		categoryClassifier,
+		transactionParser,
 		receiptAnalyzer,
 		advisorService,
 		voiceTranscriber,

@@ -14,17 +14,18 @@ import (
 )
 
 type Handler struct {
-	db             *firestore.Client
-	bot            *botapi.Client
-	linkService    *LinkService
-	accountService *account.Service
-	accountRepo    *account.Repository
-	sessions       *SessionStore
-	classifier     transaction.Classifier
-	analyzer       transaction.ReceiptAnalyzer
-	advisor        *advisor.Service
-	transcriber    Transcriber
-	webhookSecret  string
+	db                *firestore.Client
+	bot               *botapi.Client
+	linkService       *LinkService
+	accountService    *account.Service
+	accountRepo       *account.Repository
+	sessions          *SessionStore
+	classifier        transaction.Classifier
+	transactionParser transaction.TextParser
+	analyzer          transaction.ReceiptAnalyzer
+	advisor           *advisor.Service
+	transcriber       Transcriber
+	webhookSecret     string
 }
 
 // NewHandler wires the Telegram handler. The account service and repository are
@@ -32,14 +33,15 @@ type Handler struct {
 // Telegram link points at, and the repository owns the cached category lookup
 // that transaction rows are joined against.
 //
-// classifier may be nil. Category resolution then falls back to its
-// deterministic legs, which never returns high confidence, so nothing is ever
-// auto-saved on a guess — the user sees a confirmation instead.
+// classifier and transactionParser may be nil. Category resolution then falls
+// back to deterministic legs, and free-form transaction parsing falls back to the
+// local parser, so the bot remains usable without Gemini.
 func NewHandler(
 	db *firestore.Client,
 	accountService *account.Service,
 	accountRepo *account.Repository,
 	classifier transaction.Classifier,
+	transactionParser transaction.TextParser,
 	analyzer transaction.ReceiptAnalyzer,
 	advisorService *advisor.Service,
 	transcriber Transcriber,
@@ -47,17 +49,18 @@ func NewHandler(
 ) *Handler {
 	bot := botapi.New(botToken)
 	return &Handler{
-		db:             db,
-		bot:            bot,
-		linkService:    NewLinkService(db, bot),
-		accountService: accountService,
-		accountRepo:    accountRepo,
-		sessions:       NewSessionStore(db),
-		classifier:     classifier,
-		analyzer:       analyzer,
-		advisor:        advisorService,
-		transcriber:    transcriber,
-		webhookSecret:  webhookSecret,
+		db:                db,
+		bot:               bot,
+		linkService:       NewLinkService(db, bot),
+		accountService:    accountService,
+		accountRepo:       accountRepo,
+		sessions:          NewSessionStore(db),
+		classifier:        classifier,
+		transactionParser: transactionParser,
+		analyzer:          analyzer,
+		advisor:           advisorService,
+		transcriber:       transcriber,
+		webhookSecret:     webhookSecret,
 	}
 }
 

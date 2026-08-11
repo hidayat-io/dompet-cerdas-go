@@ -244,12 +244,15 @@ func (h *Handler) handleTextMessage(ctx context.Context, telegramID int64, text 
 
 	rc := replyContext{telegramID: telegramID, userID: userID, accountName: accountName, ac: ac}
 
-	// A message that parses as a transaction must not fall through to intent
-	// classification, or "makan 25rb" would be answered as an unknown query.
-	if transaction.ShouldAttemptTransactionParsing(text) {
-		if parsed := transaction.ParseLocally(text); parsed != nil && len(parsed.Items) > 0 {
-			return h.sendDraft(ctx, rc, parsed, text, domain.SessionSourceText)
-		}
+	// Try the local parser first, then the AI fallback. ParseWithFallback keeps
+	// query messages out of the AI path before intent classification handles them.
+	parsed, parseErr := transaction.ParseWithFallback(ctx, text, h.transactionParser)
+	if parseErr != nil {
+		slog.Error("telegram: transaction parsing failed", "userId", userID, "error", parseErr)
+		return h.send(ctx, rc, "⚠️ Saya belum bisa membaca transaksi itu. Coba tulis nominal dan keterangannya, misalnya: `25rb makan siang`.")
+	}
+	if parsed != nil && len(parsed.Items) > 0 {
+		return h.sendDraft(ctx, rc, parsed, text, domain.SessionSourceText)
 	}
 
 	intent := DetectSimpleIntent(text)
