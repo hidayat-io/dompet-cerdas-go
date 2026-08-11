@@ -14,7 +14,7 @@
       "amount": 1500000,
       "description": "Gaji_bulanan (net)",
       "categoryName": "Gaji",
-      "output": "⚡ *Tersimpan otomatis!*\n\n💰 Rp 1.500.000 — Gaji\\_bulanan \\(net\\)\n🏷️ Kategori: Gaji\n\n_Ada yang salah? Hapus manual di aplikasi ya._"
+      "output": "⚡ *Tersimpan otomatis!*\n\n💰 Rp 1.500.000 — Gaji\\_bulanan (net)\n🏷️ Kategori: Gaji\n\n_Ada yang salah? Hapus manual di aplikasi ya._"
     },
     {
       "label": "small-amount",

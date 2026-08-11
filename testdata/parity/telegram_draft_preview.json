@@ -58,7 +58,7 @@
         }
       ],
       "usedAI": true,
-      "output": "🧾 *Cek Dulu Sebelum Disimpan*\n\nSaya menemukan *2 transaksi* dari pesan kamu.\n\n🤖 Dibantu AI karena format pesannya cukup bebas.\n\n1. *Beli buku \\*promo\\* \\[50%\\]*\n   💰 Rp 25.000\n   📁 Belanja\\_Harian\n\n2. *Bonus*\n   💰 Rp 1.500.000\n   📁 Gaji\n\nKalau ada item yang salah, klik tombol *Hapus 1 / Hapus 2 / ...* dulu.\n\nKlik *Simpan Semua* kalau sudah benar."
+      "output": "🧾 *Cek Dulu Sebelum Disimpan*\n\nSaya menemukan *2 transaksi* dari pesan kamu.\n\n🤖 Dibantu AI karena format pesannya cukup bebas.\n\n1. *Beli buku \\*promo\\* \\[50%]*\n   💰 Rp 25.000\n   📁 Belanja\\_Harian\n\n2. *Bonus*\n   💰 Rp 1.500.000\n   📁 Gaji\n\nKalau ada item yang salah, klik tombol *Hapus 1 / Hapus 2 / ...* dulu.\n\nKlik *Simpan Semua* kalau sudah benar."
     }
   ]
 }

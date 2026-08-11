@@ -20,6 +20,7 @@ Dokumen ini mencatat keputusan arsitektur penting yang diambil selama proses men
 | [ADR-012](#adr-012-bug-last_month-diperbaiki-bukan-direplikasi) | Bug `last_month` diperbaiki, bukan direplikasi | Accepted | Memperbaiki bug penanggalan akhir bulan di Go menggunakan kalkulasi kalender yang presisi. |
 | [ADR-013](#adr-013-pergeseran-satu-hari-this_month-dan-custom_month-diperbaiki) | Pergeseran satu hari `this_month` dan `custom_month` diperbaiki | Accepted | Menghapus pergeseran UTC yang membuat batas bulan mundur satu hari. |
 | [ADR-014](#adr-014-wart-pencocokan-substring-query_keywords-dipertahankan) | Wart pencocokan substring `QUERY_KEYWORDS` dipertahankan | Accepted | "bayar listrik 350rb" tertolak diam-diam di produksi; dipertahankan dan di-pin pengujian sampai ada keputusan produk. |
+| [ADR-015](#adr-015-escapemarkdown-dipersempit-ke-4-karakter-spesial-v1-bukan-direplikasi-dari-markdownv2) | `EscapeMarkdown` dipersempit ke 4 karakter spesial V1, bukan direplikasi dari MarkdownV2 | Accepted | Menghilangkan backslash mentah yang bocor ke setiap pesan konfirmasi transaksi (mis. `"Rp150\.000"`) karena escaper lama memakai character class V2 sedangkan parse_mode produksi tetap V1. |
 
 ---
 
@@ -364,6 +365,37 @@ Mempertahankan pencocokan substring persis seperti aslinya (`strings.Contains`),
 ### Konsekuensi
 - **Kelebihan**: Paritas perilaku terjaga. Wart terdokumentasi dan terlindungi pengujian, bukan tersembunyi.
 - **Kekurangan**: Pengguna tetap tidak bisa mencatat tagihan listrik dengan frasa alami. Perbaikannya menunggu keputusan produk. Bila disetujui, perbaikan wajib disertai pembaruan fixture dan ADR baru yang menggantikan ADR ini.
+
+---
+
+## ADR-015: `EscapeMarkdown` dipersempit ke 4 karakter spesial V1, bukan direplikasi dari MarkdownV2
+
+### Status
+Accepted (perbedaan perilaku yang disengaja / *intentional behavior divergence*)
+
+### Konteks
+`escapeMarkdown` di backend lama (`responseFormatter.ts:8-10`) meng-escape seluruh character class MarkdownV2 (`_*[]()~`>#+-=|{}.!\`), padahal setiap pemanggilan `sendMessage`/`editMessageText` — baik di legacy maupun di Go — memakai `parse_mode: "Markdown"` (V1). Telegram V1 hanya mengenali `_`, `*`, `` ` ``, `[` sebagai karakter yang bisa di-escape; backslash di depan karakter lain tidak dikonsumsi oleh parser dan tampil apa adanya ke pengguna.
+
+Dampaknya terlihat langsung di produksi: deskripsi transaksi hasil AI seperti "Transaksi pembelian emas sebesar Rp150.000 pada tanggal 2 Agustus 2026." dirender sebagai "Transaksi pembelian emas sebesar Rp150\\.000 pada tanggal 2 Agustus 2026\\." — backslash mentah muncul di depan setiap titik. Ini terjadi di semua pesan yang melewati `EscapeMarkdown`: konfirmasi draft transaksi, daftar kategori, ringkasan saldo, dll.
+
+`docs/PARITY_CONTRACT.md` bagian 4.4 sebelumnya secara eksplisit meminta perilaku over-escaping ini **dipertahankan apa adanya** karena "output byte-nya sudah menjadi bagian dari pesan produksi". Catatan itu ditulis saat merencanakan porting, sebelum bug ini teramati langsung dari pesan produksi nyata.
+
+### Alternatif yang Dipertimbangkan
+1. **Pindah ke `parse_mode: "MarkdownV2"`.** Ditolak: MarkdownV2 mewajibkan escaping ketat di seluruh teks statis (header, tombol, dll), bukan cuma field dinamis. Blast radius-nya besar — satu karakter statis yang lolos di-escape akan membuat Telegram menolak pesan (`can't parse entities`), dan seluruh pesan bot perlu diaudit ulang.
+2. **Mempertahankan character class lama apa adanya.** Ditolak: ini bukan wart yang netral seperti pembulatan `999999 -> Rp 1000k` — ini bug tampilan yang nyata-nyata terlihat pengguna di setiap transaksi, dan tidak menyentuh nominal/penyimpanan sehingga aman diperbaiki tanpa risiko salah catat keuangan.
+
+### Keputusan
+Mempersempit `mdEscaper` di `internal/modules/telegram/formatter.go` menjadi hanya 4 karakter yang benar-benar spesial di V1 (`_`, `*`, `` ` ``, `[`) ditambah backslash literal itu sendiri (agar backslash pada input pengguna tidak menyatu dengan delimiter yang disisipkan tepat sesudahnya, misalnya penutup `*bold*`).
+
+```go
+var mdEscaper = regexp.MustCompile(`([_*\[` + "`" + `\\])`)
+```
+
+Fixture `testdata/parity/markdown_escape.json` dan seluruh fixture parity Telegram lain yang mengandung karakter yang terdampak (`telegram_transaction_details.json`, `telegram_category_list.json`, `telegram_draft_preview.json`, `telegram_auto_saved.json`) diperbarui untuk mengunci perilaku V1 yang benar, ditambah test baru `TestEscapeMarkdown_V1DoesNotOverEscape` yang menegaskan `.`, `!`, `-`, `(`, `)` tidak lagi di-escape sementara `_`, `*`, `` ` ``, `[` tetap di-escape.
+
+### Konsekuensi
+- **Kelebihan**: Pesan Telegram produksi tidak lagi menampilkan backslash mentah ke pengguna. Tidak ada risiko pada parsing/penyimpanan nominal karena perubahan ini murni di lapisan rendering teks.
+- **Kekurangan**: Byte output Go tidak lagi identik dengan backend lama untuk domain ini — divergensi ini didokumentasikan di `docs/PARITY_CONTRACT.md` bagian 5 menggantikan catatan "wajib dipertahankan" di bagian 4.4.
 
 ---
 

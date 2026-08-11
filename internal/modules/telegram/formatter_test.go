@@ -6,12 +6,15 @@ import (
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/paritytest"
 )
 
-// TestEscapeMarkdown_Fixtures replays escapeMarkdown output captured from the
-// legacy backend.
+// TestEscapeMarkdown_Fixtures pins EscapeMarkdown's output against
+// testdata/parity/markdown_escape.json.
 //
-// Production sends messages with parse_mode "Markdown" (V1). The escape set is
-// the MarkdownV2 character class, which is broader than V1 needs, but that is
-// live behavior and switching to V2 would change how every bot message renders.
+// This fixture no longer replays the legacy backend byte-for-byte: the legacy
+// escaper used the MarkdownV2 character class while every send call (legacy
+// and Go alike) uses parse_mode "Markdown" (V1), so it escaped characters V1
+// never treats as special and leaked a raw backslash in front of them (e.g.
+// "Rp150\.000" shown to the user). This is documented as a deliberate
+// divergence in docs/PARITY_CONTRACT.md section 5 and docs/DECISIONS.md.
 func TestEscapeMarkdown_Fixtures(t *testing.T) {
 	const fixture = "markdown_escape.json"
 
@@ -48,7 +51,7 @@ func TestEscapeMarkdown_NonStringInputs(t *testing.T) {
 		{name: "nil", input: nil, want: ""},
 		{name: "empty_string", input: "", want: ""},
 		{name: "int", input: 25000, want: "25000"},
-		{name: "int64", input: int64(-50000), want: `\-50000`},
+		{name: "int64", input: int64(-50000), want: "-50000"},
 		{name: "plain_text", input: "no special chars", want: "no special chars"},
 	}
 
@@ -56,6 +59,38 @@ func TestEscapeMarkdown_NonStringInputs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := EscapeMarkdown(tt.input); got != tt.want {
 				t.Errorf("EscapeMarkdown(%#v) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestEscapeMarkdown_V1DoesNotOverEscape locks the fix for a bug where
+// messages rendered with a literal backslash in front of every period,
+// exclamation mark, dash, etc. (e.g. "Rp150\.000") because EscapeMarkdown
+// escaped the MarkdownV2 character class while every send call uses
+// parse_mode "Markdown" (V1). V1 only recognizes '_', '*', '`', '[' as
+// escapable, so escaping anything else just leaks a raw backslash into the
+// rendered text.
+func TestEscapeMarkdown_V1DoesNotOverEscape(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{name: "period_not_escaped", input: "Rp150.000", want: "Rp150.000"},
+		{name: "exclamation_not_escaped", input: "Wow!", want: "Wow!"},
+		{name: "dash_not_escaped", input: "Transfer - DP rumah", want: "Transfer - DP rumah"},
+		{name: "parens_not_escaped", input: "Toko (Cabang 2)", want: "Toko (Cabang 2)"},
+		{name: "underscore_still_escaped", input: "_italic_", want: `\_italic\_`},
+		{name: "asterisk_still_escaped", input: "*bold*", want: `\*bold\*`},
+		{name: "backtick_still_escaped", input: "`code`", want: "\\`code\\`"},
+		{name: "open_bracket_still_escaped", input: "[link]", want: `\[link]`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := EscapeMarkdown(tt.input); got != tt.want {
+				t.Errorf("EscapeMarkdown(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
 	}
@@ -71,7 +106,7 @@ func TestWithAccountHeader(t *testing.T) {
 
 	t.Run("account_name_is_escaped", func(t *testing.T) {
 		got := WithAccountHeader("body", "Dompet.Utama")
-		want := "📁 *Akun: Dompet\\.Utama*\n\nbody"
+		want := "📁 *Akun: Dompet.Utama*\n\nbody"
 		if got != want {
 			t.Errorf("WithAccountHeader() = %q, want %q", got, want)
 		}
@@ -105,12 +140,16 @@ func TestFormatDate(t *testing.T) {
 	}
 }
 
-// An unparseable date must be escaped rather than passed through raw, otherwise
-// it could break Telegram's Markdown parser.
+// An unparseable date must go through EscapeMarkdown rather than being passed
+// through raw, otherwise a stray '_', '*', '`' or '[' in it could break
+// Telegram's Markdown parser. The probe uses '_' and '*' specifically because
+// those are the characters V1 Markdown actually treats as special — a plain
+// dash (V1-safe) wouldn't demonstrate escaping happened.
 func TestFormatDate_InvalidInputIsEscaped(t *testing.T) {
-	got := FormatDate("not-a-date")
-	if got == "not-a-date" {
-		t.Errorf("FormatDate(%q) = %q, want the value escaped", "not-a-date", got)
+	got := FormatDate("not_a*date")
+	want := `not\_a\*date`
+	if got != want {
+		t.Errorf("FormatDate(%q) = %q, want %q", "not_a*date", got, want)
 	}
 }
 
@@ -125,7 +164,7 @@ func TestFormatBalanceResponse(t *testing.T) {
 	}{
 		{
 			name: "positive", balance: 1_500_000, wantEmoji: "💰",
-			wantStatus: "Saldo positif", wantExactRp: "Rp 1\\.500\\.000",
+			wantStatus: "Saldo positif", wantExactRp: "Rp 1.500.000",
 		},
 		{
 			name: "zero", balance: 0, wantEmoji: "ℹ️",
@@ -133,7 +172,7 @@ func TestFormatBalanceResponse(t *testing.T) {
 		},
 		{
 			name: "negative", balance: -50_000, wantEmoji: "⚠️",
-			wantStatus: "Saldo negatif", wantExactRp: "Rp \\-50\\.000",
+			wantStatus: "Saldo negatif", wantExactRp: "Rp -50.000",
 		},
 	}
 

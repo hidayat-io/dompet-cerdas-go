@@ -81,7 +81,7 @@
         }
       ],
       "timeRange": "bulan ini",
-      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 5.000.000 (1x)\n  ➖ Pengeluaran: Rp 75.000 (2x)\n  💎 Saldo: Rp 4.925.000\n\n\n📅 *15 Jan \\- Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n\n📅 *14 Jan \\- Rabu*\n➖ Bensin\n  💵 Rp 50.000 • ⛽ Transport\n\n📅 *1 Jan \\- Kamis*\n➕ Gaji\n  💵 Rp 5.000.000 • 👛 Gaji"
+      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 5.000.000 (1x)\n  ➖ Pengeluaran: Rp 75.000 (2x)\n  💎 Saldo: Rp 4.925.000\n\n\n📅 *15 Jan - Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n\n📅 *14 Jan - Rabu*\n➖ Bensin\n  💵 Rp 50.000 • ⛽ Transport\n\n📅 *1 Jan - Kamis*\n➕ Gaji\n  💵 Rp 5.000.000 • 👛 Gaji"
     },
     {
       "label": "income-only",
@@ -97,7 +97,7 @@
         }
       ],
       "timeRange": "bulan ini",
-      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 1.500.000 (1x)\n\n\n📅 *15 Jan \\- Kamis*\n➕ Bonus\n  💵 Rp 1.500.000 • 🪙 Gaji"
+      "output": "📋 *Detail transaksi bulan ini*\n\n💰 Ringkasan:\n  ➕ Pemasukan: Rp 1.500.000 (1x)\n\n\n📅 *15 Jan - Kamis*\n➕ Bonus\n  💵 Rp 1.500.000 • 🪙 Gaji"
     },
     {
       "label": "with-notice-and-limit",
@@ -123,7 +123,7 @@
       ],
       "timeRange": "30 transaksi terakhir",
       "notice": "⚠️ Maksimal 30 transaksi. Menampilkan 30 transaksi terakhir.",
-      "output": "📋 *Detail transaksi 30 transaksi terakhir*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 145.000 (2x)\n\n⚠️ Maksimal 30 transaksi. Menampilkan 30 transaksi terakhir.\n\n\n📅 *15 Jan \\- Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n➖ Belanja\n  💵 Rp 120.000 • 📦 Belanja"
+      "output": "📋 *Detail transaksi 30 transaksi terakhir*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 145.000 (2x)\n\n⚠️ Maksimal 30 transaksi. Menampilkan 30 transaksi terakhir.\n\n\n📅 *15 Jan - Kamis*\n➖ Makan siang\n  💵 Rp 25.000 • 🍴 Makanan\n➖ Belanja\n  💵 Rp 120.000 • 📦 Belanja"
     },
     {
       "label": "markdown-escaping",
@@ -139,7 +139,7 @@
         }
       ],
       "timeRange": "hari ini",
-      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 25.000 (1x)\n\n\n1. ➖ *Beli buku \\*diskon\\* 50% \\[promo\\]*\n   💵 Rp 25.000 • 📚 Belanja\\_Harian"
+      "output": "📋 *Detail transaksi hari ini*\n\n💰 Ringkasan:\n  ➖ Pengeluaran: Rp 25.000 (1x)\n\n\n1. ➖ *Beli buku \\*diskon\\* 50% \\[promo]*\n   💵 Rp 25.000 • 📚 Belanja\\_Harian"
     },
     {
       "label": "unknown-icon-falls-back",

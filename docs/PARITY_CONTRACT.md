@@ -255,27 +255,27 @@ export function escapeMarkdown(text: string | number | null | undefined): string
 
 Perhatikan dua hal yang mudah terlewat:
 
-Character class-nya sebenarnya adalah daftar karakter khusus MarkdownV2, tetapi dipakai bersama `parse_mode: 'Markdown'` (V1). Ini berlebihan untuk V1, namun **wajib dipertahankan apa adanya** — output byte-nya sudah menjadi bagian dari pesan produksi.
+Character class-nya sebenarnya adalah daftar karakter khusus MarkdownV2, tetapi dipakai bersama `parse_mode: 'Markdown'` (V1). Ini berlebihan untuk V1 dan menyebabkan backslash bocor mentah ke pesan user setiap kali deskripsi transaksi mengandung titik, tanda seru, tanda kurung, dsb. **Backend Go sengaja tidak mereplikasi perilaku ini** — lihat divergensi di bagian 5 dan implementasi aktual di `internal/modules/telegram/formatter.go`. Karakter yang di-escape di Go hanya `_*\`[` plus backslash literal, bukan seluruh daftar di bawah.
 
 Input non-string ditangani lewat `String(text ?? '')`, sehingga `null` dan `undefined` menjadi string kosong, dan angka dikonversi lebih dulu. Port Go harus menyediakan perilaku setara untuk nilai kosong.
 
 #### Catatan Implementasi di Go (RE2)
 
-Karakter `-` diletakkan sebagai `\-` di dalam character class agar tidak terbaca sebagai rentang. RE2 menerima ini.
-
 Backtick tidak bisa ditulis di dalam raw string literal Go, jadi perlu dikonkatenasi.
 
 Replacement `\\$1` di JS setara `\$1` di Go, tetapi hati-hati: Go menafsirkan `$1` di dalam raw string sebagai grup capture, sehingga penulisannya harus lewat interpreted string atau `${1}` bila ada digit yang mengikutinya.
 
+Implementasi aktual **tidak** mereplikasi character class JS di atas (lihat divergensi bagian 5) — hanya 4 karakter yang benar-benar spesial di V1 plus backslash literal:
+
 ```go
-var mdEscaper = regexp.MustCompile("([_*\\[\\]()~`>#+\\-=|{}.!\\\\])")
+var mdEscaper = regexp.MustCompile(`([_*\[` + "`" + `\\])`)
 
 func EscapeMarkdown(text string) string {
 	return mdEscaper.ReplaceAllString(text, `\$1`)
 }
 ```
 
-Fixture untuk domain ini berstatus `NEEDS VERIFICATION` — jalankan `escapeMarkdown` dari `responseFormatter.ts` atas korpus input (termasuk seluruh 18 karakter khusus, string kosong, `null`, angka, dan teks Indonesia dengan tanda baca) lalu simpan hasilnya sebagai `testdata/parity/markdown_escape.json`.
+Fixture domain ini (`testdata/parity/markdown_escape.json`) sudah diperbarui untuk mengunci perilaku V1 yang benar, bukan lagi replay byte-for-byte dari `escapeMarkdown` legacy — lihat catatan di dalam fixture tersebut.
 
 ---
 
@@ -341,6 +341,7 @@ Beberapa perubahan perilaku dari sistem lama sengaja dirancang pada backend Go u
 | :--- | :--- | :--- | :--- | :--- |
 | `last_month` resolution | Mengalami rollover salah ke bulan Maret ketika dihitung pada tanggal 31 Maret (menghasilkan range terbalik start `2026-03-01`, end `2026-02-28`). | Menggunakan kalkulasi `jakarta.go` yang memotong tanggal secara aman dan mengembalikan range awal-akhir bulan yang presisi. | Perbaikan bug kalkulasi keuangan bulanan. | `internal/shared/datetime/jakarta_test.go` |
 | Timezone approach | Menggunakan offset statis (+7 jam dalam milidetik) untuk memanipulasi objek Date Javascript yang sensitif zona waktu lokal server. | Menggunakan pustaka standar Go `time.LoadLocation("Asia/Jakarta")` dan tipe data `time.Time` ter-zona. | Menghilangkan bug perbedaan jam pencatatan akibat drift zona waktu server. | `internal/shared/datetime/jakarta_test.go` |
+| `EscapeMarkdown` character class | Meng-escape seluruh karakter khusus MarkdownV2 (`_*[]()~\`>#+-=\|{}.!\\`) walau parse_mode produksi tetap `Markdown` (V1). V1 tidak mengenali escape untuk karakter selain `_*\`[`, sehingga backslash-nya bocor mentah ke pesan user (mis. deskripsi transaksi tampil sebagai `"Rp150\.000"`, bukan `"Rp150.000"`). | Hanya meng-escape 4 karakter yang benar-benar spesial di V1 (`_`, `*`, `` ` ``, `[`) ditambah backslash literal itu sendiri (agar tidak menyatu dengan delimiter yang disisipkan tepat sesudahnya, mis. penutup `*bold*`). | Bug tampilan murni (tidak menyentuh parsing/penyimpanan nominal), muncul di setiap pesan konfirmasi transaksi produksi, dan webhook Telegram sudah full cutover ke Go — bagian 4.4 yang meminta "dipertahankan apa adanya" ditulis sebelum bug ini teramati langsung dari screenshot produksi. | `internal/modules/telegram/formatter_test.go` (`TestEscapeMarkdown_Fixtures`, `TestEscapeMarkdown_V1DoesNotOverEscape`) |
 
 *Catatan: Perubahan perilaku di luar kontrak ini (seperti penghitungan token token-usage Gemini API dan transisi OCR Tesseract ke Gemini Vision) dicatat secara terpisah pada dokumen `docs/DECISIONS.md`.*
 

@@ -12,8 +12,14 @@ import (
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/money"
 )
 
-// mdEscaper is the regex used to escape MarkdownV1 for Telegram.
-var mdEscaper = regexp.MustCompile(`([_*\[\]()~` + "`" + `>#+\-=|{}.!\\])`)
+// mdEscaper escapes for Telegram's legacy Markdown (V1), the parse_mode every
+// send call in this codebase uses. V1 only treats '_', '*', '`', '[' as
+// escapable; anything else preceded by a backslash renders as a literal
+// backslash instead of being consumed, so escaping a wider set (as
+// MarkdownV2 requires) leaks backslashes into the message. A literal
+// backslash in the input is also escaped, so it can't combine with a
+// delimiter injected right after it (e.g. the closing '*' of a *bold* span).
+var mdEscaper = regexp.MustCompile(`([_*\[` + "`" + `\\])`)
 
 func EscapeMarkdown(v interface{}) string {
 	if v == nil {

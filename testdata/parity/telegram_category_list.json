@@ -63,7 +63,7 @@
           "type": "EXPENSE"
         }
       ],
-      "output": "📋 *Daftar Kategori Tersedia*\n\n💸 *Pengeluaran* (1 kategori)\n   1. Rumah\\_Tangga \\(utama\\)\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
+      "output": "📋 *Daftar Kategori Tersedia*\n\n💸 *Pengeluaran* (1 kategori)\n   1. Rumah\\_Tangga (utama)\n\n---\n💡 *Tips:*\n• Ketik \"breakdown bulan ini\" untuk lihat pengeluaran per kategori\n• Ketik \"detail kategori Food\" untuk lihat transaksi kategori tertentu"
     }
   ]
 }

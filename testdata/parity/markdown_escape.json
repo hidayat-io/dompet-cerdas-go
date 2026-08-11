@@ -1,7 +1,7 @@
 {
   "source": "functions/src/services/responseFormatter.ts:8-10",
   "fn": "escapeMarkdown",
-  "note": "Produksi memakai parse_mode Markdown (V1), bukan V2. Character class-nya berisi karakter khusus V2 dan itu memang berlebihan, tapi wajib dipertahankan. null/undefined menjadi string kosong.",
+  "note": "DIVERGENSI DISENGAJA dari legacy — lihat docs/PARITY_CONTRACT.md bagian 5 dan docs/DECISIONS.md. Legacy escape karakter khusus MarkdownV2 walau parse_mode produksi tetap 'Markdown' (V1), jadi setiap pesan bocor backslash mentah di depan '.', '!', '-', '(', ')', dll (mis. \"Rp150\\.000\" tampil apa adanya ke user). Fixture ini sudah diperbarui untuk mengunci perilaku yang benar: Go hanya escape 4 karakter yang benar-benar spesial di V1 ('_', '*', '`', '[') plus backslash literal itu sendiri (supaya tidak menyatu dengan delimiter yang disisipkan sesudahnya). null/undefined tetap menjadi string kosong.",
   "cases": [
     {
       "input": "_italic_",
@@ -16,12 +16,12 @@
     {
       "input": "[link](url)",
       "inputWasUndefined": false,
-      "output": "\\[link\\]\\(url\\)"
+      "output": "\\[link](url)"
     },
     {
       "input": "~strike~",
       "inputWasUndefined": false,
-      "output": "\\~strike\\~"
+      "output": "~strike~"
     },
     {
       "input": "`code`",
@@ -31,47 +31,47 @@
     {
       "input": ">quote",
       "inputWasUndefined": false,
-      "output": "\\>quote"
+      "output": ">quote"
     },
     {
       "input": "#hashtag",
       "inputWasUndefined": false,
-      "output": "\\#hashtag"
+      "output": "#hashtag"
     },
     {
       "input": "+plus",
       "inputWasUndefined": false,
-      "output": "\\+plus"
+      "output": "+plus"
     },
     {
       "input": "-minus",
       "inputWasUndefined": false,
-      "output": "\\-minus"
+      "output": "-minus"
     },
     {
       "input": "=equals",
       "inputWasUndefined": false,
-      "output": "\\=equals"
+      "output": "=equals"
     },
     {
       "input": "|pipe",
       "inputWasUndefined": false,
-      "output": "\\|pipe"
+      "output": "|pipe"
     },
     {
       "input": "{brace}",
       "inputWasUndefined": false,
-      "output": "\\{brace\\}"
+      "output": "{brace}"
     },
     {
       "input": ".dot",
       "inputWasUndefined": false,
-      "output": "\\.dot"
+      "output": ".dot"
     },
     {
       "input": "!bang",
       "inputWasUndefined": false,
-      "output": "\\!bang"
+      "output": "!bang"
     },
     {
       "input": "\\backslash",
@@ -81,12 +81,12 @@
     {
       "input": "Rp 2.500.000",
       "inputWasUndefined": false,
-      "output": "Rp 2\\.500\\.000"
+      "output": "Rp 2.500.000"
     },
     {
       "input": "Rp -50.000",
       "inputWasUndefined": false,
-      "output": "Rp \\-50\\.000"
+      "output": "Rp -50.000"
     },
     {
       "input": "Makanan & Minuman",
@@ -96,22 +96,22 @@
     {
       "input": "Toko Abang (Cabang 2)",
       "inputWasUndefined": false,
-      "output": "Toko Abang \\(Cabang 2\\)"
+      "output": "Toko Abang (Cabang 2)"
     },
     {
       "input": "PT. Maju Jaya",
       "inputWasUndefined": false,
-      "output": "PT\\. Maju Jaya"
+      "output": "PT. Maju Jaya"
     },
     {
       "input": "Transfer ke Budi - DP rumah",
       "inputWasUndefined": false,
-      "output": "Transfer ke Budi \\- DP rumah"
+      "output": "Transfer ke Budi - DP rumah"
     },
     {
       "input": "Beli 3 item: kopi, gula, teh.",
       "inputWasUndefined": false,
-      "output": "Beli 3 item: kopi, gula, teh\\."
+      "output": "Beli 3 item: kopi, gula, teh."
     },
     {
       "input": "no special chars here",
@@ -126,7 +126,7 @@
     {
       "input": "a_b*c[d]e(f)g~h`i>j#k+l-m=n|o{p}q.r!s",
       "inputWasUndefined": false,
-      "output": "a\\_b\\*c\\[d\\]e\\(f\\)g\\~h\\`i\\>j\\#k\\+l\\-m\\=n\\|o\\{p\\}q\\.r\\!s"
+      "output": "a\\_b\\*c\\[d]e(f)g~h\\`i>j#k+l-m=n|o{p}q.r!s"
     },
     {
       "input": 123,
@@ -141,7 +141,7 @@
     {
       "input": -50000,
       "inputWasUndefined": false,
-      "output": "\\-50000"
+      "output": "-50000"
     },
     {
       "input": null,
