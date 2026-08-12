@@ -1,6 +1,6 @@
 # DompetCerdas Go Backend
 
-Backend rewrite of [dompet_cerdas](https://github.com/mthidayat/dompet-cerdas) — an Indonesian personal finance app with AI-powered receipt scanning and Telegram bot integration.
+Backend rewrite of [dompet_cerdas](https://github.com/hidayat-io/dompet-cerdas) — an Indonesian personal finance app with AI-powered receipt scanning and Telegram bot integration.
 
 ## Status
 
@@ -64,7 +64,7 @@ CGO) when the receipt pipeline lands; it is not a dependency yet.
 
 ```bash
 # Clone
-git clone https://github.com/mthidayat/dompet-cerdas-go.git
+git clone https://github.com/hidayat-io/dompet-cerdas-go.git
 cd dompet-cerdas-go
 
 # Copy environment config
