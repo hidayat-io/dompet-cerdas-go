@@ -35,6 +35,10 @@ firebase-adminsdk*.json
 *.swo
 *~
 
+# Local agent/tool state
+.commandcode/
+.qoder/
+
 # OS
 .DS_Store
 Thumbs.db
