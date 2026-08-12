@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
@@ -77,5 +78,39 @@ func TestReceiptParseResult_MarkedAIWithScore(t *testing.T) {
 	}
 	if item.SourceText != "Toko Abang" {
 		t.Errorf("SourceText = %q, want the merchant", item.SourceText)
+	}
+}
+
+// The model can still return verbose notes despite the prompt cap; the
+// description must stay readable in the transaction list.
+func TestShortenDescription(t *testing.T) {
+	short := "Paket sei sapi berdua di SeIndonesia"
+	if got := shortenDescription(short); got != short {
+		t.Errorf("short input must pass through, got %q", got)
+	}
+
+	long := "Pembelian paket makanan Seipesial Berdua 50% di SeIndonesia (Sei Sapi Dan Ayam) yang berisi daging sapi, nasi, sambal, telur mata sapi, dan es teh."
+	got := shortenDescription(long)
+	if len(got) > maxDescriptionLen+3 {
+		t.Errorf("shortened = %q (%d bytes), want within cap + ellipsis", got, len(got))
+	}
+	if !strings.HasSuffix(got, "…") {
+		t.Errorf("shortened = %q, want trailing ellipsis", got)
+	}
+	if strings.HasSuffix(got, " ") {
+		t.Errorf("shortened = %q, must not end with a space", got)
+	}
+}
+
+func TestReceiptParseResult_LongNotesAreShortened(t *testing.T) {
+	receipt := domain.ReceiptData{
+		Merchant: "SeIndonesia",
+		Notes:    "Pembelian paket makanan Seipesial Berdua 50% di SeIndonesia (Sei Sapi Dan Ayam) yang berisi daging sapi, nasi, sambal, telur mata sapi, dan es teh.",
+	}
+
+	_, description := receiptParseResult(receipt, "")
+
+	if len(description) > maxDescriptionLen+3 {
+		t.Errorf("description = %q, want a shortened summary", description)
 	}
 }

@@ -110,8 +110,10 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 // the confirmation draft.
 func receiptParseResult(receipt domain.ReceiptData, caption string) (*domain.HybridTransactionParseResult, string) {
 	// The receipt's own notes are the most descriptive summary available; the
-	// merchant name alone reads poorly in a transaction list.
-	description := strings.TrimSpace(receipt.Notes)
+	// merchant name alone reads poorly in a transaction list. Model notes are
+	// capped because verbose summaries clutter the list; a user caption is
+	// deliberate and stays verbatim.
+	description := shortenDescription(strings.TrimSpace(receipt.Notes))
 	if description == "" {
 		description = strings.TrimSpace(receipt.Merchant)
 	}
@@ -134,4 +136,19 @@ func receiptParseResult(receipt domain.ReceiptData, caption string) (*domain.Hyb
 	}
 
 	return parsed, description
+}
+
+// maxDescriptionLen keeps receipt descriptions readable in the transaction
+// list; anything longer is cut at a word boundary.
+const maxDescriptionLen = 80
+
+func shortenDescription(s string) string {
+	if len(s) <= maxDescriptionLen {
+		return s
+	}
+	cut := s[:maxDescriptionLen]
+	if idx := strings.LastIndex(cut, " "); idx > 0 {
+		cut = cut[:idx]
+	}
+	return strings.TrimRight(cut, ".,;:") + "…"
 }
