@@ -1,5 +1,11 @@
 package domain
 
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+)
+
 // ReceiptType classifies the kind of receipt scanned.
 type ReceiptType string
 
@@ -20,18 +26,45 @@ const (
 	ConfidenceLow    Confidence = "low"
 )
 
+// ConfidenceScore is the model's self-reported extraction confidence, 0-100.
+// Models occasionally emit floats or quoted numbers, and a hard int would turn
+// a fine receipt into a parse error; degrading to 0 instead fails toward the
+// confirmation flow, since 0 can never open the auto-save gate.
+type ConfidenceScore int
+
+func (s *ConfidenceScore) UnmarshalJSON(data []byte) error {
+	var number float64
+	if err := json.Unmarshal(data, &number); err == nil {
+		*s = ConfidenceScore(number)
+		return nil
+	}
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		number, err := strconv.Atoi(strings.TrimSpace(str))
+		if err != nil {
+			*s = 0
+			return nil
+		}
+		*s = ConfidenceScore(number)
+		return nil
+	}
+	*s = 0
+	return nil
+}
+
 // ReceiptData holds the AI-extracted data from a receipt image.
 type ReceiptData struct {
-	Merchant           string      `firestore:"merchant"                      json:"merchant"`
-	TotalAmount        int64       `firestore:"totalAmount"                   json:"totalAmount"`
-	Date               string      `firestore:"date"                          json:"date"` // YYYY-MM-DD
-	Items              []string    `firestore:"items,omitempty"               json:"items,omitempty"`
-	CategorySuggestion string      `firestore:"categorySuggestion"            json:"categorySuggestion"`
-	ReceiptType        ReceiptType `firestore:"receiptType"                   json:"receiptType"`
-	Confidence         Confidence  `firestore:"confidence"                    json:"confidence"`
-	Currency           string      `firestore:"currency"                      json:"currency"`
-	Notes              string      `firestore:"notes,omitempty"               json:"notes,omitempty"`
-	IsReceipt          bool        `firestore:"is_receipt,omitempty"          json:"is_receipt,omitempty"`
+	Merchant           string          `firestore:"merchant"                      json:"merchant"`
+	TotalAmount        int64           `firestore:"totalAmount"                   json:"totalAmount"`
+	Date               string          `firestore:"date"                          json:"date"` // YYYY-MM-DD
+	Items              []string        `firestore:"items,omitempty"               json:"items,omitempty"`
+	CategorySuggestion string          `firestore:"categorySuggestion"            json:"categorySuggestion"`
+	ReceiptType        ReceiptType     `firestore:"receiptType"                   json:"receiptType"`
+	Confidence         Confidence      `firestore:"confidence"                    json:"confidence"`
+	ConfidenceScore    ConfidenceScore `firestore:"confidenceScore,omitempty"     json:"confidenceScore,omitempty"`
+	Currency           string          `firestore:"currency"                      json:"currency"`
+	Notes              string          `firestore:"notes,omitempty"               json:"notes,omitempty"`
+	IsReceipt          bool            `firestore:"is_receipt,omitempty"          json:"is_receipt,omitempty"`
 }
 
 // WebAnalysisMode selects which AI analysis the user wants.
@@ -125,4 +158,7 @@ type HybridTransactionParseResult struct {
 	UsedAI              bool                     `json:"usedAI"`
 	Confidence          Confidence               `json:"confidence"`
 	ClarificationNeeded string                   `json:"clarificationNeeded,omitempty"`
+	// ConfidenceScore is only set by the receipt-photo path; the zero value
+	// must never open the auto-save gate for other AI results.
+	ConfidenceScore ConfidenceScore `json:"confidenceScore,omitempty"`
 }

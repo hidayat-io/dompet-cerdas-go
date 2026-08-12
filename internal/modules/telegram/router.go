@@ -252,7 +252,7 @@ func (h *Handler) handleTextMessage(ctx context.Context, telegramID int64, text 
 		return h.send(ctx, rc, "⚠️ Saya belum bisa membaca transaksi itu. Coba tulis nominal dan keterangannya, misalnya: `25rb makan siang`.")
 	}
 	if parsed != nil && len(parsed.Items) > 0 {
-		return h.sendDraft(ctx, rc, parsed, text, domain.SessionSourceText)
+		return h.sendDraft(ctx, rc, parsed, text, domain.SessionSourceText, receiptImage{})
 	}
 
 	intent := DetectSimpleIntent(text)
@@ -319,7 +319,7 @@ func (h *Handler) replyAddTransaction(ctx context.Context, rc replyContext, p In
 		UsedAI: false,
 	}
 
-	return h.sendDraft(ctx, rc, parsed, rawMessage, domain.SessionSourceText)
+	return h.sendDraft(ctx, rc, parsed, rawMessage, domain.SessionSourceText, receiptImage{})
 }
 
 // allTimeStart is the lower bound the legacy backend uses for "all_time"

@@ -75,7 +75,7 @@ func TestParseWithFallback_UsesAIWhenLocalParseFails(t *testing.T) {
 		t.Fatalf("result = %+v, want UsedAI=true", got)
 	}
 	if ShouldAutoSave(got, false) {
-		t.Error("AI result must never be eligible for auto-save")
+		t.Error("AI text result carries no confidence score and must not be eligible for auto-save")
 	}
 }
 
@@ -270,8 +270,44 @@ func TestShouldAutoSave(t *testing.T) {
 			want:                 false,
 		},
 		{
-			name:                 "ai_parse_blocked",
+			name:                 "ai_parse_zero_score_blocked",
 			result:               &domain.HybridTransactionParseResult{Items: oneItem, UsedAI: true},
+			categoryResolvedByAI: false,
+			want:                 false,
+		},
+		{
+			name: "receipt_high_confidence_auto_saved",
+			result: &domain.HybridTransactionParseResult{
+				Items: oneItem, UsedAI: true,
+				ConfidenceScore: ReceiptAutoSaveConfidenceThreshold + 1,
+			},
+			categoryResolvedByAI: false,
+			want:                 true,
+		},
+		{
+			name: "receipt_at_threshold_blocked",
+			result: &domain.HybridTransactionParseResult{
+				Items: oneItem, UsedAI: true,
+				ConfidenceScore: ReceiptAutoSaveConfidenceThreshold,
+			},
+			categoryResolvedByAI: false,
+			want:                 false,
+		},
+		{
+			name: "receipt_high_confidence_ai_category_blocked",
+			result: &domain.HybridTransactionParseResult{
+				Items: oneItem, UsedAI: true,
+				ConfidenceScore: ReceiptAutoSaveConfidenceThreshold + 5,
+			},
+			categoryResolvedByAI: true,
+			want:                 false,
+		},
+		{
+			name: "receipt_high_confidence_multi_item_blocked",
+			result: &domain.HybridTransactionParseResult{
+				Items: twoItems, UsedAI: true,
+				ConfidenceScore: ReceiptAutoSaveConfidenceThreshold + 5,
+			},
 			categoryResolvedByAI: false,
 			want:                 false,
 		},

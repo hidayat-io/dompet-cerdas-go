@@ -26,6 +26,7 @@ type ManualInput struct {
 	Description        string
 	CategoryName       string
 	CategoryIDOverride string
+	Attachment         *domain.Attachment
 }
 
 // BuildManualPayload assembles the Firestore document for one manual
@@ -35,7 +36,7 @@ type ManualInput struct {
 // no "id" field and omits the creator fields entirely when unknown. Marshalling
 // the struct would introduce an empty id on every Telegram-created row and make
 // these documents differ from the ones the web app writes.
-func BuildManualPayload(amount int64, categoryID, description string, creatorUserID, creatorName string) map[string]interface{} {
+func BuildManualPayload(amount int64, categoryID, description string, creatorUserID, creatorName string, attachment *domain.Attachment) map[string]interface{} {
 	payload := map[string]interface{}{
 		"amount":      amount,
 		"categoryId":  categoryID,
@@ -47,6 +48,15 @@ func BuildManualPayload(amount int64, categoryID, description string, creatorUse
 	if creatorUserID != "" {
 		payload["createdByUserId"] = creatorUserID
 		payload["createdByName"] = creatorName
+	}
+	if attachment != nil {
+		payload["attachment"] = map[string]interface{}{
+			"url":  attachment.URL,
+			"path": attachment.Path,
+			"type": string(attachment.Type),
+			"name": attachment.Name,
+			"size": attachment.Size,
+		}
 	}
 	return payload
 }
@@ -127,7 +137,7 @@ func CreateManualBatch(
 		ref := collection.NewDoc()
 		writes = append(writes, pending{
 			ref:     ref,
-			payload: BuildManualPayload(item.Amount, categoryID, item.Description, userID, creatorName),
+			payload: BuildManualPayload(item.Amount, categoryID, item.Description, userID, creatorName, item.Attachment),
 		})
 		ids = append(ids, ref.ID)
 	}

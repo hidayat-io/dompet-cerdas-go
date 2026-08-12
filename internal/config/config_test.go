@@ -49,6 +49,38 @@ func TestValidate_PassesWhenComplete(t *testing.T) {
 	}
 }
 
+func TestLoad_DefaultsStorageBucketToProject(t *testing.T) {
+	t.Setenv("FIREBASE_PROJECT_ID", "proj")
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/sa.json")
+	t.Setenv("TELEGRAM_BOT_TOKEN", "token")
+	t.Setenv("GEMINI_API_KEY", "key")
+	t.Setenv("FIREBASE_STORAGE_BUCKET", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.FirebaseStorageBucket != "proj.appspot.com" {
+		t.Errorf("bucket = %q, want the {project-id}.appspot.com default", cfg.FirebaseStorageBucket)
+	}
+}
+
+func TestLoad_KeepsExplicitStorageBucket(t *testing.T) {
+	t.Setenv("FIREBASE_PROJECT_ID", "proj")
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/sa.json")
+	t.Setenv("TELEGRAM_BOT_TOKEN", "token")
+	t.Setenv("GEMINI_API_KEY", "key")
+	t.Setenv("FIREBASE_STORAGE_BUCKET", "custom.bucket.app")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.FirebaseStorageBucket != "custom.bucket.app" {
+		t.Errorf("bucket = %q, want the explicit value", cfg.FirebaseStorageBucket)
+	}
+}
+
 func TestIsProduction(t *testing.T) {
 	tests := []struct {
 		env  string

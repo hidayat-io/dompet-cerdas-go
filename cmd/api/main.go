@@ -25,6 +25,7 @@ import (
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/db"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/ratelimit"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/storage"
 )
 
 func main() {
@@ -91,6 +92,18 @@ func main() {
 
 	transactionHandler := transaction.NewHandler(receiptAnalyzer)
 
+	// Receipt attachments are optional: if Storage cannot be initialized the bot
+	// keeps saving transactions, just without the photo, mirroring the legacy
+	// bot's non-fatal upload behavior.
+	var receiptUploader telegram.ReceiptUploader
+	if storageClient, err := firebaseApp.Storage(ctx); err != nil {
+		slog.Warn("Storage unavailable, receipt attachments will be skipped", "error", err)
+	} else if store, err := storage.New(ctx, storageClient, cfg.FirebaseStorageBucket); err != nil {
+		slog.Warn("Storage bucket unavailable, receipt attachments will be skipped", "error", err)
+	} else {
+		receiptUploader = telegram.NewReceiptUploader(store)
+	}
+
 	telegramHandler := telegram.NewHandler(
 		firebaseApp.Firestore,
 		accountService,
@@ -100,6 +113,7 @@ func main() {
 		receiptAnalyzer,
 		advisorService,
 		voiceTranscriber,
+		receiptUploader,
 		cfg.TelegramBotToken,
 		cfg.TelegramWebhookSecret,
 	)

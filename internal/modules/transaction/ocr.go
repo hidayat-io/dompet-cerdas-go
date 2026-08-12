@@ -107,9 +107,11 @@ func NormalizeReceiptData(data domain.ReceiptData) domain.ReceiptData {
 		data.Confidence = domain.Confidence(gemini.ConfidenceLow)
 	}
 	// A zero total cannot be a usable receipt, whatever the model claimed, and
-	// the caller has to be able to tell the user that plainly.
+	// the caller has to be able to tell the user that plainly. The score is
+	// zeroed too so an unusable receipt can never open the auto-save gate.
 	if data.TotalAmount <= 0 {
 		data.IsReceipt = false
+		data.ConfidenceScore = 0
 	}
 	return data
 }

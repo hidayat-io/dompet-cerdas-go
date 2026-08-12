@@ -57,7 +57,7 @@ func TestResolveManualCategoryID_NoCategoriesNoOverrideIsAnError(t *testing.T) {
 }
 
 func TestBuildManualPayload(t *testing.T) {
-	payload := BuildManualPayload(25000, "c1", "Makan siang", "u1", "Budi")
+	payload := BuildManualPayload(25000, "c1", "Makan siang", "u1", "Budi", nil)
 
 	if payload["amount"] != int64(25000) {
 		t.Errorf("amount = %v, want 25000", payload["amount"])
@@ -76,10 +76,41 @@ func TestBuildManualPayload(t *testing.T) {
 	}
 }
 
+// Receipt photos are stored privately, so the attachment carries a Storage path
+// but no URL — the web app resolves one from the path (ADR-017).
+func TestBuildManualPayload_WritesAttachment(t *testing.T) {
+	attachment := &domain.Attachment{
+		Path: "users/u1/accounts/a1/attachments/receipt_123.jpg",
+		Type: domain.AttachmentTypeImage,
+		Name: "receipt_123.jpg",
+		Size: 4096,
+	}
+
+	got, ok := BuildManualPayload(25000, "c1", "Makan siang", "u1", "Budi", attachment)["attachment"].(map[string]interface{})
+	if !ok {
+		t.Fatal("attachment must be written as a map")
+	}
+	if got["path"] != attachment.Path {
+		t.Errorf("path = %v, want %s", got["path"], attachment.Path)
+	}
+	if got["url"] != "" {
+		t.Errorf("url = %v, want empty — no public or signed URL is persisted", got["url"])
+	}
+	if got["type"] != "image" || got["name"] != attachment.Name || got["size"] != int64(4096) {
+		t.Errorf("metadata = %v", got)
+	}
+}
+
+func TestBuildManualPayload_OmitsAttachmentWhenNil(t *testing.T) {
+	if _, present := BuildManualPayload(1, "c1", "x", "u1", "Budi", nil)["attachment"]; present {
+		t.Error("attachment must be absent, not empty, when there is none")
+	}
+}
+
 // The legacy document has no "id" field; adding one would make Telegram rows
 // differ from the ones the web app writes.
 func TestBuildManualPayload_HasNoIDField(t *testing.T) {
-	if _, present := BuildManualPayload(1, "c1", "x", "u1", "Budi")["id"]; present {
+	if _, present := BuildManualPayload(1, "c1", "x", "u1", "Budi", nil)["id"]; present {
 		t.Error("payload must not contain an id field")
 	}
 }
@@ -87,7 +118,7 @@ func TestBuildManualPayload_HasNoIDField(t *testing.T) {
 // Creator fields are omitted rather than written empty, matching
 // sanitizeFirestoreData dropping undefined values.
 func TestBuildManualPayload_OmitsCreatorWhenUnknown(t *testing.T) {
-	payload := BuildManualPayload(1, "c1", "x", "", "")
+	payload := BuildManualPayload(1, "c1", "x", "", "", nil)
 
 	if _, present := payload["createdByUserId"]; present {
 		t.Error("createdByUserId must be absent, not empty")

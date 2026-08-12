@@ -23,7 +23,8 @@ return a fabricated success payload.
 | Firestore 3-variant path resolution | Ported |
 | Shared-workspace permission model | Ported |
 | Category / creator-name caches | Ported |
-| Transaction parser and auto-save gate | Ported, fixture-verified |
+| Transaction parser and auto-save gate | Ported, fixture-verified; receipt photos auto-save above confidence 90 (ADR-016) |
+| Receipt attachments (Telegram) | Ported, stored privately in Storage without public URLs; web resolves display URL from path (ADR-017) |
 | NLU intent classification | Ported, fixture-verified |
 | Telegram Markdown escaping | Ported, fixture-verified |
 | Transaction query, sort, limit | Ported |

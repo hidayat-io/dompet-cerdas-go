@@ -71,7 +71,7 @@ func TestBuildDraftKeyboard_CallbackDataFitsTelegramLimit(t *testing.T) {
 }
 
 func TestManualInputs_PassesCategoryIDAsOverride(t *testing.T) {
-	got := manualInputs([]domain.TextTransactionSessionItem{sessionItem("Makan")})
+	got := manualInputs([]domain.TextTransactionSessionItem{sessionItem("Makan")}, nil)
 
 	if len(got) != 1 {
 		t.Fatalf("len = %d, want 1", len(got))
@@ -79,6 +79,22 @@ func TestManualInputs_PassesCategoryIDAsOverride(t *testing.T) {
 	if got[0].CategoryIDOverride != "c1" {
 		t.Errorf("override = %q, want c1 — saving must not re-resolve the category",
 			got[0].CategoryIDOverride)
+	}
+}
+
+// Receipt drafts are single-item, so the attachment only ever needs the first
+// slot — but pin it, because a multi-item write must never duplicate it.
+func TestManualInputs_AttachmentRidesFirstItemOnly(t *testing.T) {
+	attachment := &domain.Attachment{Path: "users/u1/accounts/a1/attachments/receipt_1.jpg"}
+	items := []domain.TextTransactionSessionItem{sessionItem("Makan"), sessionItem("Parkir")}
+
+	got := manualInputs(items, attachment)
+
+	if got[0].Attachment != attachment {
+		t.Error("the first item must carry the attachment")
+	}
+	if got[1].Attachment != nil {
+		t.Error("later items must not carry the attachment")
 	}
 }
 
@@ -109,7 +125,9 @@ func TestDeterministicHint(t *testing.T) {
 	}
 }
 
-// The auto-save gate must stay closed for anything the LLM touched (ADR-011).
+// The auto-save gate stays closed for anything the LLM touched (ADR-011), with
+// one exception (ADR-016): a receipt whose numeric confidence clears the
+// threshold and whose category resolved without the classifier.
 func TestAutoSaveGate(t *testing.T) {
 	single := &domain.HybridTransactionParseResult{
 		Items:  []domain.ParsedTransactionDraft{{Amount: 25000, Description: "makan"}},
@@ -125,7 +143,18 @@ func TestAutoSaveGate(t *testing.T) {
 
 	aiParsed := &domain.HybridTransactionParseResult{Items: single.Items, UsedAI: true}
 	if transaction.ShouldAutoSave(aiParsed, false) {
-		t.Error("an AI-parsed message must not auto-save")
+		t.Error("an AI-parsed message without a confidence score must not auto-save")
+	}
+
+	receipt := &domain.HybridTransactionParseResult{
+		Items: single.Items, UsedAI: true,
+		ConfidenceScore: transaction.ReceiptAutoSaveConfidenceThreshold + 5,
+	}
+	if !transaction.ShouldAutoSave(receipt, false) {
+		t.Error("a high-confidence receipt with a deterministic category should auto-save")
+	}
+	if transaction.ShouldAutoSave(receipt, true) {
+		t.Error("a classifier-resolved category must block even a high-confidence receipt")
 	}
 
 	multi := &domain.HybridTransactionParseResult{

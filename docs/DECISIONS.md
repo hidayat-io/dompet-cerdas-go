@@ -16,11 +16,13 @@ Dokumen ini mencatat keputusan arsitektur penting yang diambil selama proses men
 | [ADR-008](#adr-008-urutan-cutover--web-callables-dulu-telegram-bot-terakhir) | Urutan cutover — web callables dulu, Telegram bot terakhir | Accepted | Meminimalkan risiko switchover dengan migrasi endpoint web callable secara bertahap. |
 | [ADR-009](#adr-009-firestore-leader-lock-untuk-cron-selama-coexistence) | Firestore leader lock untuk cron selama coexistence | Accepted | Mencegah double-reminders menggunakan locking mechanism di Firestore `cron_locks/hourly_reminder`. |
 | [ADR-010](#adr-010-path-resolution-firestore-tetap-3-varian) | Path resolution Firestore tetap 3 varian | Accepted | Mendukung skema legacy, private, dan shared accounts tanpa melakukan migrasi skema data produksi. |
-| [ADR-011](#adr-011-auto-save-gate-dipertahankan--wajib-audit-logging) | Auto-save gate dipertahankan + wajib audit logging | Accepted | Menjaga UX Telegram bot auto-save, menambahkan structured logging untuk deteksi false positives. |
+| [ADR-011](#adr-011-auto-save-gate-dipertahankan--wajib-audit-logging) | Auto-save gate dipertahankan + wajib audit logging | Accepted (diamandemen sebagian oleh ADR-016) | Menjaga UX Telegram bot auto-save, menambahkan structured logging untuk deteksi false positives. |
 | [ADR-012](#adr-012-bug-last_month-diperbaiki-bukan-direplikasi) | Bug `last_month` diperbaiki, bukan direplikasi | Accepted | Memperbaiki bug penanggalan akhir bulan di Go menggunakan kalkulasi kalender yang presisi. |
 | [ADR-013](#adr-013-pergeseran-satu-hari-this_month-dan-custom_month-diperbaiki) | Pergeseran satu hari `this_month` dan `custom_month` diperbaiki | Accepted | Menghapus pergeseran UTC yang membuat batas bulan mundur satu hari. |
 | [ADR-014](#adr-014-wart-pencocokan-substring-query_keywords-dipertahankan) | Wart pencocokan substring `QUERY_KEYWORDS` dipertahankan | Accepted | "bayar listrik 350rb" tertolak diam-diam di produksi; dipertahankan dan di-pin pengujian sampai ada keputusan produk. |
 | [ADR-015](#adr-015-escapemarkdown-dipersempit-ke-4-karakter-spesial-v1-bukan-direplikasi-dari-markdownv2) | `EscapeMarkdown` dipersempit ke 4 karakter spesial V1, bukan direplikasi dari MarkdownV2 | Accepted | Menghilangkan backslash mentah yang bocor ke setiap pesan konfirmasi transaksi (mis. `"Rp150\.000"`) karena escaper lama memakai character class V2 sedangkan parse_mode produksi tetap V1. |
+| [ADR-016](#adr-016-foto-struk-dengan-confidence-numerik--90-boleh-auto-save) | Foto struk dengan confidence numerik > 90 boleh auto-save | Accepted | Struk yang terbaca jelas langsung tersimpan tanpa konfirmasi; teks bebas dan voice tetap selalu konfirmasi. |
+| [ADR-017](#adr-017-lampiran-struk-disimpan-privat-tanpa-url-publik) | Lampiran struk disimpan privat tanpa URL publik | Accepted | Foto struk dari Telegram tersimpan sebagai lampiran transaksi; objek privat, URL di-resolve web app dari path. |
 
 ---
 
@@ -245,7 +247,7 @@ Mempertahankan struktur pembacaan ketiga varian jalur Firestore tersebut di back
 ## ADR-011: Auto-save gate dipertahankan + wajib audit logging
 
 ### Status
-Accepted
+Accepted (sebagian diamandemen oleh ADR-016 untuk jalur foto struk)
 
 ### Konteks
 Fitur `shouldAutoSaveText` (didefinisikan pada `bot/index.ts` baris 240-251) mengizinkan sistem mencatat transaksi keuangan ke database secara langsung tanpa memerlukan konfirmasi interaktif dari pengguna Telegram apabila memenuhi tiga syarat mutlak:
@@ -399,11 +401,73 @@ Fixture `testdata/parity/markdown_escape.json` dan seluruh fixture parity Telegr
 
 ---
 
+## ADR-016: Foto struk dengan confidence numerik > 90 boleh auto-save
+
+### Status
+Accepted (amandemen parsial atas ADR-011)
+
+### Konteks
+Setiap unggahan foto struk via Telegram selalu melewati draft konfirmasi karena hasil ekstraksi Gemini Vision ditandai `UsedAI: true`, dan gerbang ADR-011 menolak seluruh hasil AI. Untuk struk yang terbaca jelas, langkah konfirmasi ini terasa sebagai friksi yang tidak perlu — pengguna mengirim foto lalu masih harus menekan "Simpan" untuk nominal yang memang sudah benar.
+
+Berbeda dengan parsing teks bebas (yang ambigu dan mudah salah baca), ekstraksi struk menghasilkan sinyal keyakinan yang bisa diukur: model diminta melaporkan skor numerik 0–100 di samping label `confidence` yang sudah ada.
+
+### Keputusan
+Menambahkan satu pengecualian sempit pada gerbang auto-save: hasil AI boleh auto-save hanya jika seluruh syarat berikut terpenuhi:
+1. Tepat 1 item transaksi.
+2. Kategori terselesaikan secara deterministik (nama/alias match) tanpa klasifikasi LLM.
+3. `ConfidenceScore` numerik dari ekstraksi struk **melebihi secara ketat** `ReceiptAutoSaveConfidenceThreshold` (90). Nilai tepat 90 tetap konfirmasi.
+
+Skor ini hanya pernah diisi oleh jalur foto struk (`internal/modules/telegram/photo.go`); jalur teks bebas dan voice tidak pernah mengisi skor sehingga tetap selalu konfirmasi. Ambang bersifat *strictly greater* agar konservatif. Skor 0 dinormalisasi ulang menjadi tidak terpakai ketika total struk 0 (`NormalizeReceiptData`), sehingga struk tak terpakai tidak mungkin membuka gerbang.
+
+Log audit ADR-011 diperluas dengan field `usedAI` dan `confidenceScore` agar auto-save struk dapat ditelusuri ke skor yang membenarkannya.
+
+### Alternatif yang Dipertimbangkan
+1. **Pakai label kategorikal `high` yang sudah ada.** Ditolak: hanya ada tiga tingkat granularity; "high" tidak cukup presisi untuk keputusan auto-save finansial dan memaksa pemetaan buatan (mis. high→95) yang tidak berasal dari model.
+2. **Buka gerbang untuk semua hasil AI ber-confidence tinggi (teks bebas, voice).** Ditolak: parsing teks bebas jauh lebih ambigu daripada ekstraksi struk; risikonya tidak sebanding. Ruang lingkup dibatasi foto struk saja.
+
+### Konsekuensi
+- **Kelebihan**: Foto struk yang jelas langsung tersimpan tanpa langkah konfirmasi, mempercepat pencatatan. Kesalahan baca model tetap terproteksi oleh syarat skor tinggi + kategori deterministik + audit log.
+- **Kekurangan**: Confidence numerik adalah self-reported oleh model dan tidak terkalibrasi sempurna; skor 95 tidak menjamin kebenaran mutlak. Mitigasi: audit log, dan pengguna tetap dapat menghapus transaksi dari aplikasi.
+- **Persyaratan Validasi**: `TestShouldAutoSave` dan `TestAutoSaveGate` mengunci ambang (90 ditolak, 91 diterima) dan menegaskan hasil AI tanpa skor tetap terblokir.
+
+---
+
+## ADR-017: Lampiran struk disimpan privat tanpa URL publik
+
+### Status
+Accepted (menyelesaikan Open Question #1 tentang keamanan URL nota belanja publik)
+
+### Konteks
+Setelah cutover, foto struk yang dikirim via Telegram dibuang setelah dianalisis Gemini — transaksi hasil scan tidak punya lampiran, padahal bot legacy menyimpannya: unggah ke Firebase Storage lalu tulis field `attachment` di dokumen transaksi.
+
+Mekanisme legacy bermasalah secara keamanan: `storageService.ts` memanggil `makePublic()` dan menyimpan URL statis `https://storage.googleapis.com/{bucket}/users/{userId}/attachments/receipt_{unixMillis}.jpg`. Jalur itu mudah ditebak sehingga bukti bayar pengguna (yang bisa memuat nama toko, rincian belanja, nama lengkap) dapat diakses siapa pun.
+
+Web app membaca Firestore langsung dan me-render `attachment.url` apa adanya tanpa re-sign, sehingga URL yang disimpan tidak boleh berbatas waktu — signed URL GCS (maksimal 7 hari) akan membuat lampiran transaksi lama tidak bisa dibuka.
+
+### Alternatif yang Dipertimbangkan
+1. **Pertahankan `makePublic()` demi parity.** Ditolak: melanggengkan celah keamanan yang sudah tercatat sebagai open question.
+2. **Signed URL V4 disimpan di transaksi.** Ditolak: kedaluwarsa maksimal 7 hari; transaksi yang dilihat sesudahnya menampilkan gambar rusak karena web app tidak pernah re-sign.
+3. **Signed URL + endpoint re-sign di Go API.** Ditolak: web app membaca Firestore langsung (bukan lewat Go API), jadi butuh perubahan arsitektur pembacaan di web — paling kompleks tanpa keuntungan.
+
+### Keputusan
+- Objek disimpan **privat** (tanpa `makePublic`, tanpa signed URL) ke path account-scoped yang sudah dilindungi `storage.rules`, meniru `getScopedStoragePath` web: `users/{uid}/accounts/{accountId}/attachments/receipt_{unixMillis}.jpg` atau `sharedAccounts/{sharedId}/attachments/...`.
+- Transaksi menyimpan `attachment` dengan `path`, `type`, `name`, `size`, dan `url` kosong. Web app me-resolve URL tampilan dari `path` via `getDownloadURL` saat render (tahan lama, terproteksi aturan akses), dengan fallback ke `url` tersimpan untuk dokumen lama.
+- Waktu unggah mengikuti legacy: pada saat konfirmasi draft (foto diunduh ulang via file_id), agar draft yang dibatalkan tidak meninggalkan objek yatim. Jalur auto-save (ADR-016) memakai bytes yang sudah ada di memori.
+- Kegagalan unduh/unggah bersifat **non-fatal** (perilaku legacy): transaksi tetap tersimpan tanpa lampiran dan kegagalan dicatat di log.
+
+### Konsekuensi
+- **Kelebihan**: Bukti bayar tidak lagi dapat diakses publik; lampiran struk Telegram kembali tersimpan; path sesuai `storage.rules` sehingga pemilik akun (dan anggota shared account) dapat membacanya lewat web.
+- **Kekurangan**: Memerlukan perubahan kecil di web app untuk resolve URL dari path; dokumen lampiran lama buatan bot legacy (path flat di luar aturan) hanya bisa dibuka lewat URL publik lamanya selama URL itu masih hidup.
+- **Persyaratan Validasi**: `TestReceiptStoragePath`, `TestBuildManualPayload_WritesAttachment`, `TestManualInputs_AttachmentRidesFirstItemOnly`; build + typecheck web app.
+
+---
+
 ## Keputusan yang Masih Terbuka (Open Questions)
 
 Bagian ini mendokumentasikan beberapa keputusan arsitektur yang belum disepakati sepenuhnya dan membutuhkan keputusan lanjutan:
 
 ### 1. Keamanan URL Nota Belanja Publik (Public Receipt URLs)
+> **Terselesaikan oleh ADR-017.** Backend Go menyimpan lampiran struk sebagai objek privat (tanpa `makePublic`, tanpa signed URL) dan web app me-resolve URL tampilan dari path Storage, sehingga tidak ada lagi URL publik yang mudah ditebak untuk unggahan baru. Dokumen lama yang terlanjur publik tetap dapat diakses sampai dihapus manual.
 - **Deskripsi**: Layanan `storageService.ts` saat ini memanggil fungsi `.makePublic()` setelah proses unggah gambar nota belanja berhasil dilakukan. Hal ini menyebabkan setiap berkas gambar nota belanja pengguna dapat diakses secara publik oleh siapa saja melalui alamat URL statis:
   `https://storage.googleapis.com/{bucket}/users/{userId}/attachments/receipt_{unixMillis}.jpg`
 - **Permasalahan**: Pola alamat URL tersebut sangat mudah ditebak (*guessable path*) karena hanya mengombinasikan `userId` dan timestamp milidetik. Nota belanja sering kali memuat informasi sensitif seperti nama toko, rincian barang, harga belanjaan, hingga nama lengkap pengguna.

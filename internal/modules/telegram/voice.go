@@ -142,7 +142,7 @@ func (h *Handler) handleVoiceMessage(ctx context.Context, telegramID int64, voic
 		return h.send(ctx, rc, FormatVoiceNotUnderstood(transcript))
 	}
 
-	return h.sendDraft(ctx, rc, parsed, transcript, domain.SessionSourceVoice)
+	return h.sendDraft(ctx, rc, parsed, transcript, domain.SessionSourceVoice, receiptImage{})
 }
 
 // FormatVoiceNotUnderstood tells the user what was heard when the transcript

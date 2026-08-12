@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	fbstorage "firebase.google.com/go/v4/storage"
 	"google.golang.org/api/option"
 )
 
@@ -48,6 +49,16 @@ func NewFirebase(ctx context.Context, projectID, credentialsFile string) (*Fireb
 		Firestore: fsClient,
 		Auth:      authClient,
 	}, nil
+}
+
+// Storage returns a Firebase Storage client derived from the shared app, so
+// attachment uploads reuse the same credentials as Firestore and Auth.
+func (fb *Firebase) Storage(ctx context.Context) (*fbstorage.Client, error) {
+	client, err := fb.app.Storage(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("firebase: init storage: %w", err)
+	}
+	return client, nil
 }
 
 // Ping performs a cheap Firestore operation to verify connectivity.

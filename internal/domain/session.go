@@ -39,20 +39,24 @@ type TextTransactionSessionItem struct {
 // TextTransactionSession stores the state of a Telegram text-based transaction input.
 // Firestore path: text_transaction_sessions/{sessionId}
 type TextTransactionSession struct {
-	UserID        string                       `firestore:"userId"                    json:"userId"`
-	TelegramID    int64                        `firestore:"telegramId"                json:"telegramId"`
-	AccountID     string                       `firestore:"accountId,omitempty"       json:"accountId,omitempty"`
-	AccountName   string                       `firestore:"accountName,omitempty"     json:"accountName,omitempty"`
-	RawMessage    string                       `firestore:"rawMessage"                json:"rawMessage"`
-	SourceType    SessionSourceType            `firestore:"sourceType,omitempty"      json:"sourceType,omitempty"`
-	Items         []TextTransactionSessionItem `firestore:"items"                     json:"items"`
-	UsedAI        bool                         `firestore:"usedAI"                    json:"usedAI"`
-	Status        SessionStatus                `firestore:"status"                    json:"status"`
-	CreatedAt     time.Time                    `firestore:"createdAt"                 json:"createdAt"`
-	UpdatedAt     time.Time                    `firestore:"updatedAt,omitempty"       json:"updatedAt,omitempty"`
-	ConfirmedAt   time.Time                    `firestore:"confirmedAt,omitempty"     json:"confirmedAt,omitempty"`
-	CancelledAt   time.Time                    `firestore:"cancelledAt,omitempty"     json:"cancelledAt,omitempty"`
-	InvalidatedAt time.Time                    `firestore:"invalidatedAt,omitempty"   json:"invalidatedAt,omitempty"`
+	UserID      string                       `firestore:"userId"                    json:"userId"`
+	TelegramID  int64                        `firestore:"telegramId"                json:"telegramId"`
+	AccountID   string                       `firestore:"accountId,omitempty"       json:"accountId,omitempty"`
+	AccountName string                       `firestore:"accountName,omitempty"     json:"accountName,omitempty"`
+	RawMessage  string                       `firestore:"rawMessage"                json:"rawMessage"`
+	SourceType  SessionSourceType            `firestore:"sourceType,omitempty"      json:"sourceType,omitempty"`
+	Items       []TextTransactionSessionItem `firestore:"items"                     json:"items"`
+	UsedAI      bool                         `firestore:"usedAI"                    json:"usedAI"`
+	// AttachmentFileID is the Telegram file_id of a receipt photo, set only for
+	// receipt drafts. The photo is uploaded to Storage at confirmation time, so
+	// a cancelled draft never leaves an orphaned object.
+	AttachmentFileID string        `firestore:"attachmentFileId,omitempty" json:"attachmentFileId,omitempty"`
+	Status           SessionStatus `firestore:"status"                    json:"status"`
+	CreatedAt        time.Time     `firestore:"createdAt"                 json:"createdAt"`
+	UpdatedAt        time.Time     `firestore:"updatedAt,omitempty"       json:"updatedAt,omitempty"`
+	ConfirmedAt      time.Time     `firestore:"confirmedAt,omitempty"     json:"confirmedAt,omitempty"`
+	CancelledAt      time.Time     `firestore:"cancelledAt,omitempty"     json:"cancelledAt,omitempty"`
+	InvalidatedAt    time.Time     `firestore:"invalidatedAt,omitempty"   json:"invalidatedAt,omitempty"`
 }
 
 // ReceiptSession stores the state of a Telegram receipt-scan transaction input.

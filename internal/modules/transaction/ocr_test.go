@@ -107,7 +107,7 @@ func (s *stubAnalyzer) AnalyzeReceiptVision(_ context.Context, imageBytes []byte
 }
 
 func TestAnalyzeReceipt_ParsesAndNormalizes(t *testing.T) {
-	stub := &stubAnalyzer{response: `{"merchant":"Indomaret","totalAmount":45000,"is_receipt":true}`}
+	stub := &stubAnalyzer{response: `{"merchant":"Indomaret","totalAmount":45000,"is_receipt":true,"confidenceScore":95}`}
 
 	got, err := AnalyzeReceipt(context.Background(), stub, testImage(t, 400, 400, false))
 	if err != nil {
@@ -122,12 +122,16 @@ func TestAnalyzeReceipt_ParsesAndNormalizes(t *testing.T) {
 	if got.Currency != "IDR" {
 		t.Errorf("currency = %q, want IDR", got.Currency)
 	}
+	if got.ConfidenceScore != 95 {
+		t.Errorf("confidenceScore = %d, want 95", got.ConfidenceScore)
+	}
 }
 
 // A model that reports a receipt with no total is not usable; the caller has to
-// see is_receipt=false so it can say so.
+// see is_receipt=false so it can say so. The confidence score is zeroed too, so
+// an unusable receipt can never open the auto-save gate.
 func TestAnalyzeReceipt_ZeroTotalIsNotAReceipt(t *testing.T) {
-	stub := &stubAnalyzer{response: `{"merchant":"Kucing","totalAmount":0,"is_receipt":true}`}
+	stub := &stubAnalyzer{response: `{"merchant":"Kucing","totalAmount":0,"is_receipt":true,"confidenceScore":99}`}
 
 	got, err := AnalyzeReceipt(context.Background(), stub, testImage(t, 200, 200, false))
 	if err != nil {
@@ -135,6 +139,9 @@ func TestAnalyzeReceipt_ZeroTotalIsNotAReceipt(t *testing.T) {
 	}
 	if got.IsReceipt {
 		t.Error("a zero total must force is_receipt=false")
+	}
+	if got.ConfidenceScore != 0 {
+		t.Errorf("confidenceScore = %d, want it zeroed for a zero total", got.ConfidenceScore)
 	}
 }
 

@@ -25,6 +25,7 @@ type Handler struct {
 	analyzer          transaction.ReceiptAnalyzer
 	advisor           *advisor.Service
 	transcriber       Transcriber
+	receipts          ReceiptUploader
 	webhookSecret     string
 }
 
@@ -45,6 +46,7 @@ func NewHandler(
 	analyzer transaction.ReceiptAnalyzer,
 	advisorService *advisor.Service,
 	transcriber Transcriber,
+	receipts ReceiptUploader,
 	botToken, webhookSecret string,
 ) *Handler {
 	bot := botapi.New(botToken)
@@ -60,6 +62,7 @@ func NewHandler(
 		analyzer:          analyzer,
 		advisor:           advisorService,
 		transcriber:       transcriber,
+		receipts:          receipts,
 		webhookSecret:     webhookSecret,
 	}
 }

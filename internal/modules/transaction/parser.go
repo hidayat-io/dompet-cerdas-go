@@ -17,7 +17,8 @@ type TextParser interface {
 
 // ParseWithFallback tries the deterministic parser first, then asks the AI
 // parser only when the message looks like a transaction but local parsing fails.
-// AI results are always marked as AI-generated so they cannot auto-save.
+// AI text results are marked as AI-generated and carry no confidence score, so
+// they never pass the auto-save gate.
 func ParseWithFallback(ctx context.Context, message string, parser TextParser) (*domain.HybridTransactionParseResult, error) {
 	if !ShouldAttemptTransactionParsing(message) && !ShouldAttemptAITransactionParsing(message) {
 		return nil, nil
@@ -324,12 +325,25 @@ func NormalizeParsedTransactionDrafts(items []domain.ParsedTransactionDraft) []d
 	return valid
 }
 
+// ReceiptAutoSaveConfidenceThreshold is the minimum numeric confidence a
+// receipt extraction must strictly exceed to skip the confirmation step.
+const ReceiptAutoSaveConfidenceThreshold = 90
+
 // ShouldAutoSave is the auto-save gate.
 // CRITICAL: This is the most dangerous path. False positives silently write wrong financial records.
-// SEE ADR-011: Audit logging is required in Go.
+// SEE ADR-011: Audit logging is required in Go. ADR-016 adds one exception: a
+// single-item AI result may auto-save when its ConfidenceScore strictly exceeds
+// ReceiptAutoSaveConfidenceThreshold, which only the receipt-photo path ever
+// sets; text and voice results carry a zero score and stay blocked.
 func ShouldAutoSave(result *domain.HybridTransactionParseResult, categoryResolvedByAI bool) bool {
 	if result == nil {
 		return false
 	}
-	return len(result.Items) == 1 && !result.UsedAI && !categoryResolvedByAI
+	if len(result.Items) != 1 || categoryResolvedByAI {
+		return false
+	}
+	if !result.UsedAI {
+		return true
+	}
+	return result.ConfidenceScore > ReceiptAutoSaveConfidenceThreshold
 }

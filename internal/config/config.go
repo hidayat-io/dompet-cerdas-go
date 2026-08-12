@@ -76,6 +76,10 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	if cfg.FirebaseStorageBucket == "" {
+		cfg.FirebaseStorageBucket = cfg.FirebaseProjectID + ".appspot.com"
+	}
+
 	return cfg, nil
 }
 

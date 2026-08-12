@@ -68,7 +68,7 @@ Tabel di bawah memetakan setiap file TypeScript lama di `functions/src/` ke targ
 | `services/sharedAccountService.ts` | 282 | `internal/modules/account/shared.go` | High | Logika copy-on-write subcollections untuk shared account. |
 | `services/reminderService.ts` | 206 | `internal/modules/reminder/service.go` | High | Pengiriman reminder transaksi harian & rutinitas bulanan. |
 | `services/accountService.ts` | 159 | `internal/modules/account/service.go` | Medium | Pencarian `AccountContext` (3-path resolution). |
-| `services/storageService.ts` | 108 | `internal/shared/storage/client.go` | Low | Pengunggahan berkas bukti bayar ke Firebase Storage. |
+| `services/storageService.ts` | 108 | `internal/shared/storage/storage.go` | Low | **Ported.** Pengunggahan foto struk ke Firebase Storage sebagai objek privat tanpa `makePublic` — divergensi disengaja, lihat ADR-017. |
 | `bot/commands/help.ts` | 81 | `internal/modules/telegram/cmd_help.go` | Low | Handler perintah `/help` dan `/bantuan`. |
 | `bot/commands/start.ts` | 68 | `internal/modules/telegram/cmd_start.go` | Low | Handler perintah `/start` dan `/link`. |
 | `utils/crypto.ts` | 40 | `internal/shared/crypto/token.go` | Low | Helper generator token acak 32-karakter. |

@@ -95,6 +95,20 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 		return h.send(ctx, rc, "🤔 Foto ini sepertinya bukan struk belanja. Coba kirim foto struk yang totalnya terlihat jelas.")
 	}
 
+	parsed, description := receiptParseResult(receipt, caption)
+
+	return h.sendDraft(ctx, rc, parsed, description, domain.SessionSourceText,
+		receiptImage{fileID: fileID, bytes: raw})
+}
+
+// receiptParseResult turns an analyzed receipt into the draft shape the shared
+// confirmation flow consumes.
+//
+// Receipts are model-extracted, so they stay marked as AI. They may still
+// auto-save, but only when the model's numeric confidence clears the threshold
+// AND the category resolves without the classifier; anything less goes through
+// the confirmation draft.
+func receiptParseResult(receipt domain.ReceiptData, caption string) (*domain.HybridTransactionParseResult, string) {
 	// The receipt's own notes are the most descriptive summary available; the
 	// merchant name alone reads poorly in a transaction list.
 	description := strings.TrimSpace(receipt.Notes)
@@ -115,10 +129,9 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 			CategoryHint: receipt.CategorySuggestion,
 			SourceText:   receipt.Merchant,
 		}},
-		// A receipt is always model-extracted, so it never auto-saves: the user
-		// confirms the amount the model read before anything is written.
-		UsedAI: true,
+		UsedAI:          true,
+		ConfidenceScore: receipt.ConfidenceScore,
 	}
 
-	return h.sendDraft(ctx, rc, parsed, description, domain.SessionSourceText)
+	return parsed, description
 }

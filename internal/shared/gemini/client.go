@@ -98,6 +98,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   "categorySuggestion": "Makanan | Belanja Harian | Transport | Kesehatan | Hiburan | Tagihan | Lainnya",
   "receiptType": "retail | restaurant | transport | bill | other",
   "confidence": "high | medium | low",
+  "confidenceScore": integer 0-100 (how confident you are in the extraction),
   "currency": "IDR",
   "notes": "rangkuman singkat transaksi dalam Bahasa Indonesia yang alami & manusiawi (misal: 'Belanja grosir sembako di Toko Abang')"
 }
@@ -110,7 +111,8 @@ Rules:
 5. Suggest category based on merchant type and items.
 6. Write "notes" ALWAYS in friendly, natural Indonesian language.
 7. For poor quality images, mark confidence as "medium" or "low".
-8. Return only the JSON object, no other text.`
+8. Set "confidenceScore" to a bare integer between 0 and 100, consistent with "confidence". Use a value above 90 only when the total amount and merchant are clearly legible and unambiguous.
+9. Return only the JSON object, no other text.`
 
 	return executeWithRetry(ctx, 2, func() (string, error) {
 		part := genai.NewPartFromBytes(imageBytes, mimeType)

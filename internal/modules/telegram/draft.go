@@ -72,16 +72,21 @@ func draftItems(items []domain.TextTransactionSessionItem) []DraftItem {
 
 // manualInputs adapts session items for the write path. The category id is
 // passed as an override so that saving cannot re-resolve to a different category
-// than the one the user just approved on screen.
-func manualInputs(items []domain.TextTransactionSessionItem) []transaction.ManualInput {
+// than the one the user just approved on screen. The attachment, when present,
+// rides on the first item — receipt drafts are always single-item.
+func manualInputs(items []domain.TextTransactionSessionItem, attachment *domain.Attachment) []transaction.ManualInput {
 	out := make([]transaction.ManualInput, 0, len(items))
-	for _, item := range items {
-		out = append(out, transaction.ManualInput{
+	for i, item := range items {
+		input := transaction.ManualInput{
 			Amount:             item.Amount,
 			Description:        item.Description,
 			CategoryName:       item.CategoryName,
 			CategoryIDOverride: item.CategoryID,
-		})
+		}
+		if i == 0 {
+			input.Attachment = attachment
+		}
+		out = append(out, input)
 	}
 	return out
 }
@@ -145,6 +150,14 @@ func deterministicHint(hint string, categories []domain.Category) bool {
 	return false
 }
 
+// receiptImage carries a receipt photo along the save path. bytes is set when
+// the caller still holds them (the auto-save leg uploads directly); fileID lets
+// the confirmation leg re-download, so cancelled drafts never upload anything.
+type receiptImage struct {
+	fileID string
+	bytes  []byte
+}
+
 // sendDraft is the shared tail of every path that produces transactions from a
 // message: it either saves silently when the bot is certain, or posts a preview
 // with confirm buttons.
@@ -154,6 +167,7 @@ func (h *Handler) sendDraft(
 	parsed *domain.HybridTransactionParseResult,
 	rawMessage string,
 	sourceType domain.SessionSourceType,
+	receipt receiptImage,
 ) error {
 	items, usedClassifier, err := h.resolveDraftItems(ctx, rc, parsed.Items)
 	if err != nil {
@@ -168,18 +182,19 @@ func (h *Handler) sendDraft(
 	}
 
 	if transaction.ShouldAutoSave(parsed, usedClassifier) {
-		return h.autoSave(ctx, rc, items[0])
+		return h.autoSave(ctx, rc, items[0], parsed, h.uploadReceiptBytes(ctx, rc, receipt.bytes))
 	}
 
 	sessionID, err := h.sessions.Create(ctx, domain.TextTransactionSession{
-		UserID:      rc.userID,
-		TelegramID:  rc.telegramID,
-		AccountID:   rc.ac.AccountID,
-		AccountName: rc.accountName,
-		RawMessage:  rawMessage,
-		SourceType:  sourceType,
-		Items:       items,
-		UsedAI:      parsed.UsedAI,
+		UserID:           rc.userID,
+		TelegramID:       rc.telegramID,
+		AccountID:        rc.ac.AccountID,
+		AccountName:      rc.accountName,
+		RawMessage:       rawMessage,
+		SourceType:       sourceType,
+		Items:            items,
+		UsedAI:           parsed.UsedAI,
+		AttachmentFileID: receipt.fileID,
 	})
 	if err != nil {
 		slog.Error("telegram: failed to create draft session", "userId", rc.userID, "error", err)
@@ -196,12 +211,53 @@ func (h *Handler) sendDraft(
 	return err
 }
 
+// uploadReceiptBytes stores already-downloaded receipt photo bytes. A failure
+// is non-fatal — the transaction is still saved, just without its photo, which
+// is what the legacy bot did.
+func (h *Handler) uploadReceiptBytes(ctx context.Context, rc replyContext, image []byte) *domain.Attachment {
+	if h.receipts == nil || len(image) == 0 {
+		return nil
+	}
+	attachment, err := h.receipts.UploadReceipt(ctx, rc.ac, image)
+	if err != nil {
+		slog.Warn("telegram: receipt attachment upload failed, saving without it",
+			"userId", rc.userID, "error", err)
+		return nil
+	}
+	return &attachment
+}
+
+// uploadSessionReceipt re-downloads the receipt photo referenced by a draft
+// session and stores it. Any leg failing degrades to "no attachment" rather
+// than blocking the save, matching the legacy bot.
+func (h *Handler) uploadSessionReceipt(ctx context.Context, rc replyContext, fileID string) *domain.Attachment {
+	if h.receipts == nil || fileID == "" {
+		return nil
+	}
+
+	path, err := h.bot.GetFilePath(ctx, fileID)
+	if err != nil {
+		slog.Warn("telegram: receipt re-download failed, saving without attachment",
+			"userId", rc.userID, "error", err)
+		return nil
+	}
+	raw, err := h.bot.DownloadFile(ctx, path)
+	if err != nil {
+		slog.Warn("telegram: receipt re-download failed, saving without attachment",
+			"userId", rc.userID, "error", err)
+		return nil
+	}
+
+	return h.uploadReceiptBytes(ctx, rc, raw)
+}
+
 // autoSave writes a single high-confidence transaction without asking.
 //
 // ADR-011 requires a structured audit line for every row that takes this path:
 // the user never saw a confirmation, so the log is the only way to trace a
-// mis-parse back to its input after the fact.
-func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.TextTransactionSessionItem) error {
+// mis-parse back to its input after the fact. usedAI and confidenceScore let a
+// receipt auto-save be traced to the score that justified it (ADR-016).
+func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.TextTransactionSessionItem, parsed *domain.HybridTransactionParseResult, attachment *domain.Attachment) error {
 	slog.Info("telegram auto-save",
 		"autoSaveTriggered", true,
 		"amount", item.Amount,
@@ -209,10 +265,13 @@ func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.Tex
 		"categoryName", item.CategoryName,
 		"telegramId", rc.telegramID,
 		"sourceText", item.SourceText,
+		"usedAI", parsed.UsedAI,
+		"confidenceScore", parsed.ConfidenceScore,
+		"hasAttachment", attachment != nil,
 	)
 
 	if _, err := transaction.CreateManualBatch(ctx, h.db, h.accountService, h.accountRepo, rc.ac, rc.userID,
-		manualInputs([]domain.TextTransactionSessionItem{item})); err != nil {
+		manualInputs([]domain.TextTransactionSessionItem{item}, attachment)); err != nil {
 		slog.Error("telegram: auto-save write failed", "userId", rc.userID, "error", err)
 		return h.send(ctx, rc, "❌ Gagal menyimpan transaksi. Silakan coba lagi.")
 	}
@@ -268,8 +327,10 @@ func (h *Handler) handleDraftSave(ctx context.Context, telegramID int64, message
 		return h.replaceDraftMessage(ctx, telegramID, messageID, "❌ Terjadi kesalahan. Silakan coba lagi.")
 	}
 
+	attachment := h.uploadSessionReceipt(ctx, rc, session.AttachmentFileID)
+
 	if _, err := transaction.CreateManualBatch(ctx, h.db, h.accountService, h.accountRepo, rc.ac, session.UserID,
-		manualInputs(session.Items)); err != nil {
+		manualInputs(session.Items, attachment)); err != nil {
 		// The session is already spent. Say so plainly instead of implying a
 		// retry will work on the same buttons.
 		slog.Error("telegram draft save: write failed", "sessionId", sessionID, "error", err)
