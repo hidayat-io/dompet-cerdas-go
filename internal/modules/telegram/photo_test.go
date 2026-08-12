@@ -114,3 +114,17 @@ func TestReceiptParseResult_LongNotesAreShortened(t *testing.T) {
 		t.Errorf("description = %q, want a shortened summary", description)
 	}
 }
+
+// Copied on-screen confirmation text must degrade to a plain label.
+func TestReceiptParseResult_ConfirmationNotesBecomeLabels(t *testing.T) {
+	receipt := domain.ReceiptData{
+		Merchant: "Treasury",
+		Notes:    "Pembelian emas berhasil senilai Rp150.000",
+	}
+
+	_, description := receiptParseResult(receipt, "")
+
+	if description != "Pembelian emas" {
+		t.Errorf("description = %q, want %q", description, "Pembelian emas")
+	}
+}

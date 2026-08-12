@@ -87,6 +87,26 @@ func TestCleanDescription_StripsLeakedCurrency(t *testing.T) {
 	}
 }
 
+// Receipt notes must read like transaction labels; copied on-screen
+// confirmation text ("berhasil senilai Rp...") is noise.
+func TestCleanReceiptNotes(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{input: "Pembelian emas berhasil senilai Rp150.000", want: "Pembelian emas"},
+		{input: "Pembayaran sukses untuk token listrik Rp50.000", want: "Pembayaran"},
+		{input: "Paket sei berdua di SeIndonesia", want: "Paket sei berdua di SeIndonesia"},
+		{input: "Belanja grosir sembako di Toko Abang", want: "Belanja grosir sembako di Toko Abang"},
+	}
+
+	for _, tt := range tests {
+		if got := CleanReceiptNotes(tt.input); got != tt.want {
+			t.Errorf("CleanReceiptNotes(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestNormalizeTransactionParseResponse_StripsCurrencyFromDescription(t *testing.T) {
 	raw := `{"items":[{"amount":150000,"description":"pembelian emas Rp150.000.","category_hint":"Shopping","sourceText":"beli emas 150 ribu"}],"confidence":"high"}`
 

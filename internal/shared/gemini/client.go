@@ -100,7 +100,7 @@ Return ONLY valid JSON (no markdown, no code blocks):
   "confidence": "high | medium | low",
   "confidenceScore": integer 0-100 (how confident you are in the extraction),
   "currency": "IDR",
-  "notes": "deskripsi transaksi singkat dalam Bahasa Indonesia, maksimal 8 kata (misal: 'Paket sei sapi berdua di SeIndonesia')"
+  "notes": "label transaksi dalam Bahasa Indonesia, maksimal 6 kata, tanpa nominal (misal: 'Pembelian emas', 'Paket sei berdua di SeIndonesia')"
 }
 
 Rules:
@@ -109,7 +109,7 @@ Rules:
 3. Ignore tax, service charge, subtotals individually.
 4. If date not found, use today's date.
 5. Suggest category based on merchant type and items.
-6. Write "notes" in natural Indonesian, at most 8 words: name the purchase kind or package and the merchant. NEVER list individual items or menu contents.
+6. Write "notes" as a short transaction label (max 6 words) describing WHAT was bought and WHERE, e.g. "Pembelian emas" or "Belanja mingguan di Indomaret". NEVER include the amount (it is stored separately) and NEVER copy on-screen confirmation wording such as "berhasil", "sukses", or "pembayaran diterima".
 7. For poor quality images, mark confidence as "medium" or "low".
 8. Set "confidenceScore" to a bare integer between 0 and 100, consistent with "confidence". Use a value above 90 only when the total amount and merchant are clearly legible and unambiguous.
 9. Return only the JSON object, no other text.`
@@ -281,6 +281,17 @@ func cleanDescription(s string) string {
 	s = indonesianDateRegex.ReplaceAllString(s, " ")
 	s = strings.Join(strings.Fields(s), " ")
 	return strings.TrimRight(s, ".,;:")
+}
+
+var receiptConfirmationNoiseRegex = regexp.MustCompile(`(?i)\s+(?:berhasil|sukses)\b.*$`)
+
+// CleanReceiptNotes strips confirmation boilerplate and leaked amounts from
+// model notes so descriptions read like transaction labels, not copies of the
+// on-screen confirmation text.
+func CleanReceiptNotes(s string) string {
+	s = receiptConfirmationNoiseRegex.ReplaceAllString(s, "")
+	s = leakedCurrencyRegex.ReplaceAllString(s, " ")
+	return strings.TrimRight(strings.Join(strings.Fields(s), " "), ".,;:")
 }
 
 func normalizeTransactionParseResponse(response transactionParseResponse, message string) (*domain.HybridTransactionParseResult, error) {

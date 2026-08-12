@@ -8,6 +8,7 @@ import (
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/transaction"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 )
 
 // largestPhotoFileID picks the biggest rendition Telegram offers. The array is
@@ -111,9 +112,9 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 func receiptParseResult(receipt domain.ReceiptData, caption string) (*domain.HybridTransactionParseResult, string) {
 	// The receipt's own notes are the most descriptive summary available; the
 	// merchant name alone reads poorly in a transaction list. Model notes are
-	// capped because verbose summaries clutter the list; a user caption is
-	// deliberate and stays verbatim.
-	description := shortenDescription(strings.TrimSpace(receipt.Notes))
+	// cleaned and capped because verbose summaries or copied confirmation text
+	// clutter the list; a user caption is deliberate and stays verbatim.
+	description := shortenDescription(gemini.CleanReceiptNotes(strings.TrimSpace(receipt.Notes)))
 	if description == "" {
 		description = strings.TrimSpace(receipt.Merchant)
 	}
