@@ -82,6 +82,9 @@ func intFromAny(raw interface{}) int {
 // shouldAutoSaveDraft excludes the voice source: the transcription is a second
 // place the meaning can drift, and an auto-saved reply would not show it.
 func (h *Handler) handleVoiceMessage(ctx context.Context, telegramID int64, voice voiceAttachment) error {
+	progressID := h.markProgress(ctx, telegramID, "🎤 Mendengarkan voice note...\n\nMohon tunggu beberapa detik...")
+	defer h.clearProgress(ctx, telegramID, progressID)
+
 	rc, err := h.replyContextForLink(ctx, telegramID)
 	if err != nil {
 		if errors.Is(err, errNotLinked) {
@@ -101,11 +104,6 @@ func (h *Handler) handleVoiceMessage(ctx context.Context, telegramID int64, voic
 	}
 	if voice.fileSize > MaxVoiceBytes {
 		return h.send(ctx, rc, "⚠️ File audio terlalu besar.\n\nMaksimal 10MB per kiriman ya.")
-	}
-
-	if err := h.bot.SendMessage(ctx, telegramID,
-		"🎤 Mendengarkan voice note...\n\nMohon tunggu beberapa detik...", "Markdown"); err != nil {
-		slog.Warn("telegram voice: failed to send progress notice", "error", err)
 	}
 
 	path, err := h.bot.GetFilePath(ctx, voice.fileID)

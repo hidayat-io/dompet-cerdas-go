@@ -53,6 +53,9 @@ func documentFileID(msg map[string]interface{}) string {
 // the text session keeps one state machine, one set of buttons, and one atomic
 // claim path; the user-visible steps are the same.
 func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, fileID, caption string) error {
+	progressID := h.markProgress(ctx, telegramID, "⏳ Membaca struk...")
+	defer h.clearProgress(ctx, telegramID, progressID)
+
 	rc, err := h.replyContextForLink(ctx, telegramID)
 	if err != nil {
 		if errors.Is(err, errNotLinked) {
@@ -65,10 +68,6 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 
 	if h.analyzer == nil {
 		return h.send(ctx, rc, notPortedMessage("Scan struk"))
-	}
-
-	if err := h.bot.SendMessage(ctx, telegramID, "⏳ Membaca struk...", "Markdown"); err != nil {
-		slog.Warn("telegram photo: failed to send progress notice", "error", err)
 	}
 
 	path, err := h.bot.GetFilePath(ctx, fileID)
@@ -107,8 +106,8 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 //
 // Receipts are model-extracted, so they stay marked as AI. They may still
 // auto-save, but only when the model's numeric confidence clears the threshold
-// AND the category resolves without the classifier; anything less goes through
-// the confirmation draft.
+// and the category is trusted (deterministic or classifier-high, ADR-018);
+// anything less goes through the confirmation draft.
 func receiptParseResult(receipt domain.ReceiptData, caption string) (*domain.HybridTransactionParseResult, string) {
 	// The receipt's own notes are the most descriptive summary available; the
 	// merchant name alone reads poorly in a transaction list. Model notes are

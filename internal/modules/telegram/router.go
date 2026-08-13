@@ -223,6 +223,9 @@ func (h *Handler) send(ctx context.Context, rc replyContext, body string) error 
 // Every branch either answers with data or says plainly why it cannot, so no
 // input can reach this function and produce nothing.
 func (h *Handler) handleTextMessage(ctx context.Context, telegramID int64, text string) error {
+	progressID := h.markProgress(ctx, telegramID, "⏳ Diterima, sedang diproses...")
+	defer h.clearProgress(ctx, telegramID, progressID)
+
 	userID, link, err := h.linkService.GetTelegramLinkContext(ctx, telegramID)
 	if err != nil {
 		slog.Error("telegram: failed to resolve link context", "telegramId", telegramID, "error", err)
@@ -664,17 +667,16 @@ func (h *Handler) replyContextForLink(ctx context.Context, telegramID int64) (re
 
 // replyAdvice runs an AI analysis and posts it.
 //
-// The analysis takes several seconds, so a progress notice goes out first;
-// without it the bot looks unresponsive for exactly the kind of request users
-// are least patient with.
+// The analysis takes several seconds, so a progress notice goes out first and
+// is removed when the result lands; without it the bot looks unresponsive for
+// exactly the kind of request users are least patient with.
 func (h *Handler) replyAdvice(ctx context.Context, rc replyContext, mode advisor.Mode) error {
 	if h.advisor == nil || !h.advisor.Available() {
 		return h.send(ctx, rc, notPortedMessage("Analisa keuangan AI"))
 	}
 
-	if err := h.bot.SendMessage(ctx, rc.telegramID, "⏳ Menganalisis data keuanganmu...", "Markdown"); err != nil {
-		slog.Warn("telegram advice: failed to send progress notice", "error", err)
-	}
+	progressID := h.markProgress(ctx, rc.telegramID, "⏳ Menganalisis data keuanganmu...")
+	defer h.clearProgress(ctx, rc.telegramID, progressID)
 
 	result, err := h.advisor.Analyze(ctx, rc.userID, rc.ac.AccountID, mode)
 	if err != nil {

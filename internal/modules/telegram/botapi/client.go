@@ -70,6 +70,16 @@ func (c *Client) EditMessageText(ctx context.Context, chatID int64, messageID in
 	return c.post(ctx, "editMessageText", payload, nil)
 }
 
+// DeleteMessage removes a message; the bot uses it for its temporary progress
+// notices.
+func (c *Client) DeleteMessage(ctx context.Context, chatID int64, messageID int) error {
+	payload := map[string]interface{}{
+		"chat_id":    chatID,
+		"message_id": messageID,
+	}
+	return c.post(ctx, "deleteMessage", payload, nil)
+}
+
 // GetFilePath resolves a Telegram file_id to a downloadable path.
 func (c *Client) GetFilePath(ctx context.Context, fileID string) (string, error) {
 	var result struct {
