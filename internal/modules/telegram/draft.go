@@ -91,30 +91,44 @@ func manualInputs(items []domain.TextTransactionSessionItem, attachment *domain.
 	return out
 }
 
-// resolveDraftItems attaches a category to every parsed draft and reports
-// whether any of them needed the LLM, which is what disqualifies auto-save.
+// categoryTrust summarizes how a draft's categories were resolved, which is
+// what the auto-save gate reads.
+type categoryTrust struct {
+	untrusted     bool // any category below high confidence; blocks auto-save
+	viaClassifier bool // any category without a deterministic keyword hit; audit-only
+}
+
+// record folds one resolved category into the trust summary.
+func (t *categoryTrust) record(choice transaction.CategoryChoice, hint string, categories []domain.Category) {
+	// ADR-018: a "high" confidence is trusted whether it came from a keyword
+	// hit or the classifier; anything less must be confirmed by the user.
+	if choice.Confidence != gemini.ConfidenceHigh {
+		t.untrusted = true
+	}
+	if !deterministicHint(hint, categories) {
+		t.viaClassifier = true
+	}
+}
+
+// resolveDraftItems attaches a category to every parsed draft and reports how
+// much trust the resolution earned, which is what the auto-save gate reads.
 func (h *Handler) resolveDraftItems(
 	ctx context.Context,
 	rc replyContext,
 	drafts []domain.ParsedTransactionDraft,
-) (items []domain.TextTransactionSessionItem, usedClassifier bool, err error) {
+) (items []domain.TextTransactionSessionItem, trust categoryTrust, err error) {
 	categories, err := h.accountRepo.GetUserCategories(ctx, rc.ac, false)
 	if err != nil {
-		return nil, false, err
+		return nil, trust, err
 	}
 
 	for _, draft := range drafts {
 		choice, err := transaction.ResolveCategoryChoice(ctx, h.classifier, draft.Description, categories, draft.CategoryHint)
 		if err != nil {
-			return nil, false, err
+			return nil, trust, err
 		}
 
-		// A deterministic hit is exactly the "direct/alias match" ADR-011
-		// requires for auto-save; anything else came from the classifier or the
-		// fallback and must be confirmed by the user.
-		if choice.Confidence != gemini.ConfidenceHigh || !deterministicHint(draft.CategoryHint, categories) {
-			usedClassifier = true
-		}
+		trust.record(choice, draft.CategoryHint, categories)
 
 		items = append(items, domain.TextTransactionSessionItem{
 			Amount:       draft.Amount,
@@ -126,7 +140,7 @@ func (h *Handler) resolveDraftItems(
 		})
 	}
 
-	return items, usedClassifier, nil
+	return items, trust, nil
 }
 
 // deterministicHint reports whether the hint alone could have selected a
@@ -158,6 +172,17 @@ type receiptImage struct {
 	bytes  []byte
 }
 
+// shouldAutoSaveDraft is the source-aware wrapper around the auto-save gate.
+// Voice notes never auto-save no matter how clean the parse is: the transcript
+// is a second place the meaning can drift, and an auto-saved reply would not
+// show what was heard (ADR-018).
+func shouldAutoSaveDraft(sourceType domain.SessionSourceType, parsed *domain.HybridTransactionParseResult, categoryUntrusted bool) bool {
+	if sourceType == domain.SessionSourceVoice {
+		return false
+	}
+	return transaction.ShouldAutoSave(parsed, categoryUntrusted)
+}
+
 // sendDraft is the shared tail of every path that produces transactions from a
 // message: it either saves silently when the bot is certain, or posts a preview
 // with confirm buttons.
@@ -169,7 +194,7 @@ func (h *Handler) sendDraft(
 	sourceType domain.SessionSourceType,
 	receipt receiptImage,
 ) error {
-	items, usedClassifier, err := h.resolveDraftItems(ctx, rc, parsed.Items)
+	items, trust, err := h.resolveDraftItems(ctx, rc, parsed.Items)
 	if err != nil {
 		if errors.Is(err, transaction.ErrNoCategories) {
 			return h.send(ctx, rc, "❌ Akun ini belum punya kategori. Buat dulu di aplikasi web DompetCerdas.")
@@ -181,8 +206,8 @@ func (h *Handler) sendDraft(
 		return h.send(ctx, rc, FormatUnknownIntent())
 	}
 
-	if transaction.ShouldAutoSave(parsed, usedClassifier) {
-		return h.autoSave(ctx, rc, items[0], parsed, h.uploadReceiptBytes(ctx, rc, receipt.bytes))
+	if shouldAutoSaveDraft(sourceType, parsed, trust.untrusted) {
+		return h.autoSave(ctx, rc, items[0], parsed, trust.viaClassifier, h.uploadReceiptBytes(ctx, rc, receipt.bytes))
 	}
 
 	sessionID, err := h.sessions.Create(ctx, domain.TextTransactionSession{
@@ -257,7 +282,7 @@ func (h *Handler) uploadSessionReceipt(ctx context.Context, rc replyContext, fil
 // the user never saw a confirmation, so the log is the only way to trace a
 // mis-parse back to its input after the fact. usedAI and confidenceScore let a
 // receipt auto-save be traced to the score that justified it (ADR-016).
-func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.TextTransactionSessionItem, parsed *domain.HybridTransactionParseResult, attachment *domain.Attachment) error {
+func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.TextTransactionSessionItem, parsed *domain.HybridTransactionParseResult, categoryViaClassifier bool, attachment *domain.Attachment) error {
 	slog.Info("telegram auto-save",
 		"autoSaveTriggered", true,
 		"amount", item.Amount,
@@ -267,6 +292,7 @@ func (h *Handler) autoSave(ctx context.Context, rc replyContext, item domain.Tex
 		"sourceText", item.SourceText,
 		"usedAI", parsed.UsedAI,
 		"confidenceScore", parsed.ConfidenceScore,
+		"categoryViaClassifier", categoryViaClassifier,
 		"hasAttachment", attachment != nil,
 	)
 

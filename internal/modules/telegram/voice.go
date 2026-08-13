@@ -78,8 +78,9 @@ func intFromAny(raw interface{}) int {
 // same parser and draft flow a typed message takes.
 //
 // The draft always carries the transcript, so a mis-hearing is visible before
-// the user confirms. That is also why a voice draft is never auto-saved: the
-// transcription is a second place the meaning can drift.
+// the user confirms. That is also why a voice draft is never auto-saved —
+// shouldAutoSaveDraft excludes the voice source: the transcription is a second
+// place the meaning can drift, and an auto-saved reply would not show it.
 func (h *Handler) handleVoiceMessage(ctx context.Context, telegramID int64, voice voiceAttachment) error {
 	rc, err := h.replyContextForLink(ctx, telegramID)
 	if err != nil {

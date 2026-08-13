@@ -7,6 +7,7 @@ import (
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/account"
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/transaction"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 )
 
 func sessionItem(desc string) domain.TextTransactionSessionItem {
@@ -125,9 +126,10 @@ func TestDeterministicHint(t *testing.T) {
 	}
 }
 
-// The auto-save gate stays closed for anything the LLM touched (ADR-011), with
-// one exception (ADR-016): a receipt whose numeric confidence clears the
-// threshold and whose category resolved without the classifier.
+// The auto-save gate stays closed for untrusted categories and multi-item
+// parses (ADR-011). Since ADR-018 a high-confidence classifier pick is trusted;
+// only a below-high confidence blocks. The receipt exception (ADR-016) still
+// requires the numeric score on top.
 func TestAutoSaveGate(t *testing.T) {
 	single := &domain.HybridTransactionParseResult{
 		Items:  []domain.ParsedTransactionDraft{{Amount: 25000, Description: "makan"}},
@@ -135,10 +137,10 @@ func TestAutoSaveGate(t *testing.T) {
 	}
 
 	if !transaction.ShouldAutoSave(single, false) {
-		t.Error("single local-parsed item with a deterministic category should auto-save")
+		t.Error("single local-parsed item with a trusted category should auto-save")
 	}
 	if transaction.ShouldAutoSave(single, true) {
-		t.Error("a classifier-resolved category must not auto-save")
+		t.Error("an untrusted (below-high) category must not auto-save")
 	}
 
 	aiParsed := &domain.HybridTransactionParseResult{Items: single.Items, UsedAI: true}
@@ -151,10 +153,10 @@ func TestAutoSaveGate(t *testing.T) {
 		ConfidenceScore: transaction.ReceiptAutoSaveConfidenceThreshold + 5,
 	}
 	if !transaction.ShouldAutoSave(receipt, false) {
-		t.Error("a high-confidence receipt with a deterministic category should auto-save")
+		t.Error("a high-confidence receipt with a trusted category should auto-save")
 	}
 	if transaction.ShouldAutoSave(receipt, true) {
-		t.Error("a classifier-resolved category must block even a high-confidence receipt")
+		t.Error("an untrusted category must block even a high-confidence receipt")
 	}
 
 	multi := &domain.HybridTransactionParseResult{
@@ -165,6 +167,47 @@ func TestAutoSaveGate(t *testing.T) {
 	}
 	if transaction.ShouldAutoSave(multi, false) {
 		t.Error("a multi-item message must not auto-save")
+	}
+}
+
+func TestCategoryTrust_Record(t *testing.T) {
+	categories := []domain.Category{
+		{ID: "c1", Name: "Belanja", Type: domain.TransactionTypeExpense},
+	}
+
+	var trust categoryTrust
+	trust.record(transaction.CategoryChoice{CategoryID: "c1", CategoryName: "Belanja", Confidence: gemini.ConfidenceHigh}, "", categories)
+	if trust.untrusted {
+		t.Error("a high-confidence classifier pick must be trusted")
+	}
+	if !trust.viaClassifier {
+		t.Error("an empty hint means the classifier picked the category; the audit flag must be set")
+	}
+
+	trust = categoryTrust{}
+	trust.record(transaction.CategoryChoice{CategoryID: "c1", CategoryName: "Belanja", Confidence: gemini.ConfidenceMedium}, "", categories)
+	if !trust.untrusted {
+		t.Error("a medium-confidence category must block auto-save")
+	}
+
+	trust = categoryTrust{}
+	trust.record(transaction.CategoryChoice{CategoryID: "c1", CategoryName: "Belanja", Confidence: gemini.ConfidenceHigh}, "shopping", categories)
+	if trust.untrusted || trust.viaClassifier {
+		t.Error("a deterministic high-confidence hit must record nothing")
+	}
+}
+
+func TestShouldAutoSaveDraft_VoiceNeverAutoSaves(t *testing.T) {
+	parsed := &domain.HybridTransactionParseResult{
+		Items:  []domain.ParsedTransactionDraft{{Amount: 25000, Description: "makan"}},
+		UsedAI: false,
+	}
+
+	if !shouldAutoSaveDraft(domain.SessionSourceText, parsed, false) {
+		t.Error("a clean text draft with a trusted category should auto-save")
+	}
+	if shouldAutoSaveDraft(domain.SessionSourceVoice, parsed, false) {
+		t.Error("a voice draft must always confirm, however clean the parse")
 	}
 }
 

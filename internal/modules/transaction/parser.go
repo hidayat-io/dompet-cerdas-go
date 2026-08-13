@@ -334,12 +334,15 @@ const ReceiptAutoSaveConfidenceThreshold = 90
 // SEE ADR-011: Audit logging is required in Go. ADR-016 adds one exception: a
 // single-item AI result may auto-save when its ConfidenceScore strictly exceeds
 // ReceiptAutoSaveConfidenceThreshold, which only the receipt-photo path ever
-// sets; text and voice results carry a zero score and stay blocked.
-func ShouldAutoSave(result *domain.HybridTransactionParseResult, categoryResolvedByAI bool) bool {
+// sets; text and voice results carry a zero score and stay blocked. ADR-018
+// relaxes the category leg: categoryUntrusted is only true when resolution
+// confidence was below "high", so a high-confidence classifier pick no longer
+// blocks a deterministic single-item parse.
+func ShouldAutoSave(result *domain.HybridTransactionParseResult, categoryUntrusted bool) bool {
 	if result == nil {
 		return false
 	}
-	if len(result.Items) != 1 || categoryResolvedByAI {
+	if len(result.Items) != 1 || categoryUntrusted {
 		return false
 	}
 	if !result.UsedAI {

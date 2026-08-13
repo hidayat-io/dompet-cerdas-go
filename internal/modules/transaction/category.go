@@ -86,9 +86,9 @@ func FallbackCategory(categories []domain.Category, preferred domain.Transaction
 // resolveCategoryChoice (bot/index.ts:253).
 //
 // Order: exact hint match, then alias/substring match, then the classifier,
-// then the fallback. The first two return "high" and are what make auto-save
-// possible without an LLM round trip; the fallback always returns "low", so a
-// guess is never saved without the user seeing it first.
+// then the fallback. The first two return "high", as does a confident
+// classifier; since ADR-018 all three permit auto-save. The fallback always
+// returns "low", so a guess is never saved without the user seeing it first.
 func ResolveCategoryChoice(
 	ctx context.Context,
 	classifier Classifier,

@@ -16,13 +16,14 @@ Dokumen ini mencatat keputusan arsitektur penting yang diambil selama proses men
 | [ADR-008](#adr-008-urutan-cutover--web-callables-dulu-telegram-bot-terakhir) | Urutan cutover — web callables dulu, Telegram bot terakhir | Accepted | Meminimalkan risiko switchover dengan migrasi endpoint web callable secara bertahap. |
 | [ADR-009](#adr-009-firestore-leader-lock-untuk-cron-selama-coexistence) | Firestore leader lock untuk cron selama coexistence | Accepted | Mencegah double-reminders menggunakan locking mechanism di Firestore `cron_locks/hourly_reminder`. |
 | [ADR-010](#adr-010-path-resolution-firestore-tetap-3-varian) | Path resolution Firestore tetap 3 varian | Accepted | Mendukung skema legacy, private, dan shared accounts tanpa melakukan migrasi skema data produksi. |
-| [ADR-011](#adr-011-auto-save-gate-dipertahankan--wajib-audit-logging) | Auto-save gate dipertahankan + wajib audit logging | Accepted (diamandemen sebagian oleh ADR-016) | Menjaga UX Telegram bot auto-save, menambahkan structured logging untuk deteksi false positives. |
+| [ADR-011](#adr-011-auto-save-gate-dipertahankan--wajib-audit-logging) | Auto-save gate dipertahankan + wajib audit logging | Accepted (diamandemen sebagian oleh ADR-016 dan ADR-018) | Menjaga UX Telegram bot auto-save, menambahkan structured logging untuk deteksi false positives. |
 | [ADR-012](#adr-012-bug-last_month-diperbaiki-bukan-direplikasi) | Bug `last_month` diperbaiki, bukan direplikasi | Accepted | Memperbaiki bug penanggalan akhir bulan di Go menggunakan kalkulasi kalender yang presisi. |
 | [ADR-013](#adr-013-pergeseran-satu-hari-this_month-dan-custom_month-diperbaiki) | Pergeseran satu hari `this_month` dan `custom_month` diperbaiki | Accepted | Menghapus pergeseran UTC yang membuat batas bulan mundur satu hari. |
 | [ADR-014](#adr-014-wart-pencocokan-substring-query_keywords-dipertahankan) | Wart pencocokan substring `QUERY_KEYWORDS` dipertahankan | Accepted | "bayar listrik 350rb" tertolak diam-diam di produksi; dipertahankan dan di-pin pengujian sampai ada keputusan produk. |
 | [ADR-015](#adr-015-escapemarkdown-dipersempit-ke-4-karakter-spesial-v1-bukan-direplikasi-dari-markdownv2) | `EscapeMarkdown` dipersempit ke 4 karakter spesial V1, bukan direplikasi dari MarkdownV2 | Accepted | Menghilangkan backslash mentah yang bocor ke setiap pesan konfirmasi transaksi (mis. `"Rp150\.000"`) karena escaper lama memakai character class V2 sedangkan parse_mode produksi tetap V1. |
-| [ADR-016](#adr-016-foto-struk-dengan-confidence-numerik--90-boleh-auto-save) | Foto struk dengan confidence numerik > 90 boleh auto-save | Accepted | Struk yang terbaca jelas langsung tersimpan tanpa konfirmasi; teks bebas dan voice tetap selalu konfirmasi. |
+| [ADR-016](#adr-016-foto-struk-dengan-confidence-numerik--90-boleh-auto-save) | Foto struk dengan confidence numerik > 90 boleh auto-save | Accepted (diamandemen sebagian oleh ADR-018) | Struk yang terbaca jelas langsung tersimpan tanpa konfirmasi; teks bebas konfirmasi hanya bila kategori di bawah high; voice selalu konfirmasi. |
 | [ADR-017](#adr-017-lampiran-struk-disimpan-privat-tanpa-url-publik) | Lampiran struk disimpan privat tanpa URL publik | Accepted | Foto struk dari Telegram tersimpan sebagai lampiran transaksi; objek privat, URL di-resolve web app dari path. |
+| [ADR-018](#adr-018-kategori-classifier-high-dipercaya-untuk-auto-save-teks-voice-selalu-konfirmasi) | Kategori classifier "high" dipercaya untuk auto-save teks; voice selalu konfirmasi | Accepted | Pesan teks bernominal deterministik langsung tersimpan walau kategori dipilih AI (confidence high); voice note tetap wajib konfirmasi. |
 
 ---
 
@@ -247,7 +248,7 @@ Mempertahankan struktur pembacaan ketiga varian jalur Firestore tersebut di back
 ## ADR-011: Auto-save gate dipertahankan + wajib audit logging
 
 ### Status
-Accepted (sebagian diamandemen oleh ADR-016 untuk jalur foto struk)
+Accepted (sebagian diamandemen oleh ADR-016 untuk jalur foto struk dan oleh ADR-018 untuk kaki kategori)
 
 ### Konteks
 Fitur `shouldAutoSaveText` (didefinisikan pada `bot/index.ts` baris 240-251) mengizinkan sistem mencatat transaksi keuangan ke database secara langsung tanpa memerlukan konfirmasi interaktif dari pengguna Telegram apabila memenuhi tiga syarat mutlak:
@@ -459,6 +460,33 @@ Web app membaca Firestore langsung dan me-render `attachment.url` apa adanya tan
 - **Kelebihan**: Bukti bayar tidak lagi dapat diakses publik; lampiran struk Telegram kembali tersimpan; path sesuai `storage.rules` sehingga pemilik akun (dan anggota shared account) dapat membacanya lewat web.
 - **Kekurangan**: Memerlukan perubahan kecil di web app untuk resolve URL dari path; dokumen lampiran lama buatan bot legacy (path flat di luar aturan) hanya bisa dibuka lewat URL publik lamanya selama URL itu masih hidup.
 - **Persyaratan Validasi**: `TestReceiptStoragePath`, `TestBuildManualPayload_WritesAttachment`, `TestManualInputs_AttachmentRidesFirstItemOnly`; build + typecheck web app.
+
+---
+
+## ADR-018: Kategori classifier "high" dipercaya untuk auto-save teks; voice selalu konfirmasi
+
+### Status
+Accepted (amandemen parsial atas ADR-011 dan ADR-016)
+
+### Konteks
+Pesan teks bernominal jelas (mis. `2000 Beli PAT AI Qoder`) tetap selalu meminta konfirmasi walau nominal dan deskripsi ter-parse deterministik oleh parser lokal, karena pesan tidak mengandung kata kunci kategori apa pun: kategori dipilih oleh classifier LLM, dan syarat ketiga ADR-011 menuntut direct/alias match. Friksi ini terasa pada sebagian besar input teks, padahal satu-satunya tebakan AI adalah kategori — salah kategori hanya berdampak kosmetik (kategori dapat diubah di web app), berbeda dengan salah nominal yang finansial.
+
+Jalur voice lebih berisiko: transkripsi audio adalah lapisan kedua tempat makna bisa meleset, dan balasan auto-save tidak menampilkan transkripnya sehingga mis-hear tidak terlihat pengguna.
+
+### Keputusan
+1. Kaki kategori gerbang auto-save dilonggarkan: kategori boleh berasal dari classifier selama confidence-nya `"high"`. Confidence `"medium"`/`"low"` serta kategori fallback tetap memblokir auto-save. Berlaku untuk jalur teks dan foto struk (jalur foto tetap wajib skor > 90 dari ADR-016 karena nominalnya dibaca AI).
+2. Voice note **tidak pernah** auto-save dalam kondisi apa pun — `shouldAutoSaveDraft` menolak source `voice` sebelum gerbang dievaluasi, sehingga transkrip selalu terlihat di draft konfirmasi.
+3. Agregasi kepercayaan kategori dipusatkan di `categoryTrust` (`internal/modules/telegram/draft.go`): flag `untrusted` (confidence di bawah high) memblokir gerbang; flag `viaClassifier` (tidak ada keyword hit deterministik) hanya untuk audit.
+4. Log audit ADR-011 diperluas dengan field `categoryViaClassifier` agar setiap auto-save dapat ditelusuri apakah kategorinya berasal dari kata kunci atau dari classifier.
+
+### Alternatif yang Dipertimbangkan
+1. **Menambah kata kunci kategori deterministik** (mis. `beli` → Belanja). Ditolak sebagai satu-satunya solusi: cakupan sempit (whack-a-mole) dan kata luas seperti `bayar` bisa salah tembak (`bayar listrik` seharusnya Bill, bukan Belanja) yang justru auto-save dengan kategori keliru.
+2. **Mempertahankan status quo.** Ditolak: friksi konfirmasi pada input teks bernominal deterministik dikeluhkan pengguna sebagai bot yang "tidak pintar".
+
+### Konsekuensi
+- **Kelebihan**: Pesan teks bernominal jelas langsung tersimpan tanpa konfirmasi; konfirmasi hanya muncul bila kategori benar-benar tidak pasti (medium/low/fallback) atau item lebih dari satu.
+- **Kekurangan**: Confidence "high" adalah self-reported classifier dan tidak terkalibrasi sempurna; kategori keliru bisa tersimpan senyap. Mitigasi: nominal tetap deterministik, kategori dapat diedit di web app, dan log audit memuat `categoryViaClassifier`.
+- **Persyaratan Validasi**: `TestCategoryTrust_Record`, `TestShouldAutoSaveDraft_VoiceNeverAutoSaves`, dan `TestAutoSaveGate` mengunci semantik baru gerbang.
 
 ---
 
