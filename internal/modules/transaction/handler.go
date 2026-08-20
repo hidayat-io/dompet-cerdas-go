@@ -56,6 +56,14 @@ func (h *Handler) ScanReceipt(c *gin.Context) {
 			response.BadRequest(c, "Ukuran gambar melebihi 5MB.", "IMAGE_TOO_LARGE", nil)
 			return
 		}
+		if errors.Is(err, ErrQuotaExceeded) {
+			slog.Error("scan receipt failed: quota exceeded",
+				"error", err,
+				"bytes", len(raw),
+			)
+			response.Fail(c, 429, "Kuota AI sedang habis (Gemini spending cap). Silakan coba lagi nanti.", "QUOTA_EXCEEDED", nil)
+			return
+		}
 		slog.Error("scan receipt failed",
 			"error", err,
 			"bytes", len(raw),

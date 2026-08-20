@@ -12,7 +12,7 @@ func TestValidate_ReportsAllMissingVars(t *testing.T) {
 		t.Fatal("Validate() = nil, want an error when every required var is unset")
 	}
 
-	want := "missing required environment variables: FIREBASE_PROJECT_ID, GEMINI_API_KEY, GOOGLE_APPLICATION_CREDENTIALS, TELEGRAM_BOT_TOKEN"
+	want := "missing required environment variables: FIREBASE_PROJECT_ID, GOOGLE_APPLICATION_CREDENTIALS, TELEGRAM_BOT_TOKEN"
 	if err.Error() != want {
 		t.Errorf("Validate() error = %q, want %q", err.Error(), want)
 	}

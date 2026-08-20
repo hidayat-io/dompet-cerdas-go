@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/antigravity"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/transaction"
 )
 
@@ -126,6 +128,10 @@ func (h *Handler) handleVoiceMessage(ctx context.Context, telegramID int64, voic
 
 	transcript, err := h.transcriber.TranscribeAudio(ctx, audio, voice.mimeType)
 	if err != nil {
+		if gemini.IsQuotaExceeded(err) || antigravity.IsQuotaExceeded(err) {
+			slog.Error("telegram voice: quota exceeded", "error", err)
+			return h.send(ctx, rc, "❌ Kuota AI sedang habis (Gemini spending cap).\n\nVoice note tidak bisa diproses sekarang, silakan ketik manual atau coba lagi nanti.")
+		}
 		slog.Error("telegram voice: transcription failed", "error", err)
 		return h.send(ctx, rc, "❌ Terjadi kesalahan saat memproses voice note. Silakan coba lagi.")
 	}

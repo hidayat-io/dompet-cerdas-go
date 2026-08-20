@@ -23,6 +23,7 @@ import (
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/telegram/botapi"
 	"github.com/mthidayat/dompet-cerdas-go/internal/modules/transaction"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/db"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/antigravity"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/ratelimit"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/storage"
@@ -69,22 +70,39 @@ func main() {
 
 	quotaManager := advisor.NewQuotaManager(firebaseApp.Firestore)
 
-	// The classifier is optional: without a Gemini key the bot still resolves
+	// The classifier is optional: without an AI key the bot still resolves
 	// categories deterministically and simply asks for confirmation more often,
 	// rather than refusing to record transactions.
+	// Antigravity (Google One OAuth via daily-cloudcode-pa) is preferred over
+	// direct Gemini API because it uses the Google One quota (no spending cap).
 	var categoryClassifier transaction.Classifier
 	var transactionParser transaction.TextParser
 	var receiptAnalyzer transaction.ReceiptAnalyzer
 	var insightGenerator advisor.InsightGenerator
 	var voiceTranscriber telegram.Transcriber
-	if geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey); err != nil {
-		slog.Warn("Gemini unavailable, category classification and receipt scanning will degrade", "error", err)
-	} else {
-		categoryClassifier = geminiClient
-		transactionParser = geminiClient
-		receiptAnalyzer = geminiClient
-		insightGenerator = geminiClient
-		voiceTranscriber = geminiClient
+	if cfg.AntigravityAPIKey != "" {
+		if agClient, err := antigravity.NewClient(cfg.AntigravityBaseURL, cfg.AntigravityAPIKey, cfg.AntigravityModel); err != nil {
+			slog.Warn("Antigravity unavailable, will try Gemini", "error", err)
+		} else {
+			slog.Info("Antigravity enabled", "baseURL", cfg.AntigravityBaseURL, "model", cfg.AntigravityModel)
+			categoryClassifier = agClient
+			transactionParser = agClient
+			receiptAnalyzer = agClient
+			insightGenerator = agClient
+			voiceTranscriber = agClient
+		}
+	}
+	if categoryClassifier == nil {
+		if geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey); err != nil {
+			slog.Warn("Gemini unavailable, category classification and receipt scanning will degrade", "error", err)
+		} else {
+			slog.Info("Gemini enabled", "model", gemini.ModelFlash)
+			categoryClassifier = geminiClient
+			transactionParser = geminiClient
+			receiptAnalyzer = geminiClient
+			insightGenerator = geminiClient
+			voiceTranscriber = geminiClient
+		}
 	}
 
 	advisorService := advisor.NewService(accountService, accountRepository, insightGenerator, quotaManager)

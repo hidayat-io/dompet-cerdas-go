@@ -12,6 +12,7 @@ import (
 
 	"github.com/mthidayat/dompet-cerdas-go/internal/domain"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/datetime"
+	"github.com/mthidayat/dompet-cerdas-go/internal/shared/antigravity"
 	"github.com/mthidayat/dompet-cerdas-go/internal/shared/gemini"
 )
 
@@ -30,6 +31,9 @@ const (
 
 // ErrReceiptTooLarge is returned for an oversized upload.
 var ErrReceiptTooLarge = errors.New("receipt image exceeds the size limit")
+
+// ErrQuotaExceeded is returned when Gemini quota / spending cap is exhausted.
+var ErrQuotaExceeded = errors.New("gemini quota exceeded")
 
 // ReceiptAnalyzer is the vision leg of receipt scanning, kept as an interface so
 // the resize path can be tested without calling the model.
@@ -81,6 +85,9 @@ func AnalyzeReceipt(ctx context.Context, analyzer ReceiptAnalyzer, raw []byte) (
 
 	rawJSON, err := analyzer.AnalyzeReceiptVision(ctx, compressed, mimeType)
 	if err != nil {
+		if gemini.IsQuotaExceeded(err) || antigravity.IsQuotaExceeded(err) {
+			return domain.ReceiptData{}, fmt.Errorf("%w: %w", ErrQuotaExceeded, err)
+		}
 		return domain.ReceiptData{}, fmt.Errorf("analyze receipt: %w", err)
 	}
 

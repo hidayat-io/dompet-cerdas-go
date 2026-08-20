@@ -30,6 +30,16 @@ type Config struct {
 	// GeminiAPIKey is the API key for Google Gemini.
 	GeminiAPIKey string
 
+	// AntigravityBaseURL is the OpenAI-compatible base URL for Antigravity proxy.
+	// Default: "http://127.0.0.1:3000/v1" when ANTIGRAVITY_BASE_URL is empty.
+	AntigravityBaseURL string
+
+	// AntigravityAPIKey is the proxy API key for Antigravity.
+	AntigravityAPIKey string
+
+	// AntigravityModel is the model ID for Antigravity (e.g. gemini-3.6-flash-high).
+	AntigravityModel string
+
 	// Port is the HTTP listen port. Default: "8080".
 	Port string
 
@@ -65,6 +75,9 @@ func Load() (*Config, error) {
 		TelegramBotToken:      os.Getenv("TELEGRAM_BOT_TOKEN"),
 		TelegramWebhookSecret: os.Getenv("TELEGRAM_WEBHOOK_SECRET"),
 		GeminiAPIKey:          os.Getenv("GEMINI_API_KEY"),
+		AntigravityBaseURL:    getEnvOr("ANTIGRAVITY_BASE_URL", "http://127.0.0.1:3000/v1"),
+		AntigravityAPIKey:     os.Getenv("ANTIGRAVITY_API_KEY"),
+		AntigravityModel:      getEnvOr("ANTIGRAVITY_MODEL", "gemini-3.6-flash-high"),
 		Port:                  getEnvOr("PORT", "8080"),
 		Env:                   getEnvOr("ENV", "development"),
 		CORSAllowedOrigins:    parseCSV(getEnvOr("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
@@ -95,7 +108,6 @@ func (c *Config) Validate() error {
 		{"FIREBASE_PROJECT_ID", c.FirebaseProjectID},
 		{"GOOGLE_APPLICATION_CREDENTIALS", c.GoogleCredentials},
 		{"TELEGRAM_BOT_TOKEN", c.TelegramBotToken},
-		{"GEMINI_API_KEY", c.GeminiAPIKey},
 	}
 
 	var missing []string
@@ -108,6 +120,9 @@ func (c *Config) Validate() error {
 	if len(missing) > 0 {
 		sort.Strings(missing)
 		return fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
+	}
+	if strings.TrimSpace(c.GeminiAPIKey) == "" && strings.TrimSpace(c.AntigravityAPIKey) == "" {
+		return fmt.Errorf("missing required environment variables: GEMINI_API_KEY or ANTIGRAVITY_API_KEY")
 	}
 
 	return nil

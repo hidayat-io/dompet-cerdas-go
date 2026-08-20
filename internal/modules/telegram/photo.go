@@ -87,6 +87,10 @@ func (h *Handler) handleReceiptPhoto(ctx context.Context, telegramID int64, file
 		if errors.Is(err, transaction.ErrReceiptTooLarge) {
 			return h.send(ctx, rc, "❌ Foto terlalu besar (maksimal 5MB).")
 		}
+		if errors.Is(err, transaction.ErrQuotaExceeded) {
+			slog.Error("telegram photo: quota exceeded", "error", err)
+			return h.send(ctx, rc, "❌ Kuota AI sedang habis (Gemini spending cap).\n\nSilakan coba lagi nanti atau hubungi admin untuk menambah kuota di https://ai.google.dev/gemini-api/docs/billing#project-spend-caps.")
+		}
 		slog.Error("telegram photo: analysis failed", "error", err)
 		return h.send(ctx, rc, "❌ Gagal membaca struk. Coba foto ulang dengan pencahayaan lebih baik.")
 	}

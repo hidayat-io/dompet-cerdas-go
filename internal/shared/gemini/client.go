@@ -53,6 +53,9 @@ func executeWithRetry[T any](ctx context.Context, maxRetries int, fn func() (T, 
 		if err == nil {
 			return result, nil
 		}
+		if IsQuotaExceeded(err) {
+			return result, err
+		}
 		if i < maxRetries {
 			select {
 			case <-ctx.Done():
@@ -62,6 +65,27 @@ func executeWithRetry[T any](ctx context.Context, maxRetries int, fn func() (T, 
 		}
 	}
 	return result, err
+}
+
+// IsQuotaExceeded reports whether err is a Gemini quota / spending-cap exhaustion that will not succeed on retry.
+func IsQuotaExceeded(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	if strings.Contains(s, "resource_exhausted") {
+		return true
+	}
+	if strings.Contains(s, "spending cap") {
+		return true
+	}
+	if strings.Contains(s, "quota") && strings.Contains(s, "exceeded") {
+		return true
+	}
+	if strings.Contains(s, "429") && strings.Contains(s, "exceeded") {
+		return true
+	}
+	return false
 }
 
 func (c *Client) TranscribeAudio(ctx context.Context, audioBytes []byte, mimeType string) (string, error) {
